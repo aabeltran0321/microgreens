@@ -10,8 +10,6 @@ const int orpSensorPin = A2;
 bool toggleState = HIGH;
 
 DHT dht(dht22Pin, DHT22);
-unsigned long lastDebounceTime = 0;
-const unsigned long debounceDelay = 10; // 50 ms debounce time
 
 void setup() {
   Serial.begin(9600);
@@ -30,18 +28,13 @@ void setup() {
 }
 
 void loop() {
-    bool reading = digitalRead(toggleSwitchPin);
-    if (reading != toggleState) {
-      lastDebounceTime = millis();
-    }
-
-    if ((millis() - lastDebounceTime) > debounceDelay) {
-      if (reading != toggleState) {
-        toggleState = reading;
-        Serial.print("Toggle Switch: ");
-        Serial.println(toggleState ? "OFF" : "ON");
-      }
-    }
+  // Check toggle switch
+  bool newToggleState = digitalRead(toggleSwitchPin);
+  if (newToggleState != toggleState) {
+    toggleState = newToggleState;
+    Serial.print("Toggle Switch: ");
+    Serial.println(toggleState ? "OFF" : "ON");
+  }
 
   // Handle serial commands
   if (Serial.available()) {
