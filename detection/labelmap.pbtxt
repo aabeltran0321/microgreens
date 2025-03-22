@@ -1,0 +1,60 @@
+item {
+  id: 1
+  name: 'BUS'
+}
+
+item {
+  id: 2
+  name: 'Building'
+}
+
+item {
+  id: 3
+  name: 'Cone'
+}
+
+item {
+  id: 4
+  name: 'JEEPNEY'
+}
+
+item {
+  id: 5
+  name: 'Motorcycle'
+}
+
+item {
+  id: 6
+  name: 'Person'
+}
+
+item {
+  id: 7
+  name: 'barricade'
+}
+
+item {
+  id: 8
+  name: 'bollard'
+}
+
+item {
+  id: 9
+  name: 'car'
+}
+
+item {
+  id: 10
+  name: 'pedestrian lane'
+}
+
+item {
+  id: 11
+  name: 'stairs'
+}
+
+item {
+  id: 12
+  name: 'tricycle'
+}
+

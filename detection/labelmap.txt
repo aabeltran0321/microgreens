@@ -1,0 +1,12 @@
+BUS
+Building
+Cone
+JEEPNEY
+Motorcycle
+Person
+barricade
+bollard
+car
+pedestrian lane
+stairs
+tricycle
