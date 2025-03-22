@@ -3,17 +3,20 @@
 const int relayPins1[] = {40, 42, 44, 46, 22, 24, 26, 28}; // Relay Module 1
 const int relayPins2[] = {30, 32, 34, 36, 38, 48};          // Relay Module 2
 const int toggleSwitchPin = 6;
+const int floatSwitchPin = 23;
 const int dht22Pin = 2;
 const int ecSensorPin = A0;
 const int phSensorPin = A1;
 const int orpSensorPin = A2;
 bool toggleState = HIGH;
+bool toggleState2 = HIGH;
 
 DHT dht(dht22Pin, DHT22);
 
 void setup() {
   Serial.begin(9600);
   pinMode(toggleSwitchPin, INPUT_PULLUP);
+  pinMode(floatSwitchPin, INPUT_PULLUP);
 
   for (int pin : relayPins1) {
     pinMode(pin, OUTPUT);
@@ -30,10 +33,17 @@ void setup() {
 void loop() {
   // Check toggle switch
   bool newToggleState = digitalRead(toggleSwitchPin);
+  bool newToggleState2 = digitalRead(floatSwitchPin);
   if (newToggleState != toggleState) {
     toggleState = newToggleState;
     Serial.print("Toggle Switch: ");
     Serial.println(toggleState ? "OFF" : "ON");
+  }
+
+  if (newToggleState2 != toggleState2) {
+    toggleState2 = newToggleState2;
+    Serial.print("Float Switch: ");
+    Serial.println(floatSwitchPin ? "OFF" : "ON");
   }
 
   // Handle serial commands
