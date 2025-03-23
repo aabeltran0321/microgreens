@@ -1,60 +1,35 @@
 item {
-  id: 1
-  name: 'BUS'
+    name: "Bacterial",
+    id: 1,
+    display_name: "Bacterial"
 }
-
 item {
-  id: 2
-  name: 'Building'
+    name: "Downy_mildew_on_lettuce",
+    id: 2,
+    display_name: "Downy_mildew_on_lettuce"
 }
-
 item {
-  id: 3
-  name: 'Cone'
+    name: "Powdery_mildew_on_lettuce",
+    id: 3,
+    display_name: "Powdery_mildew_on_lettuce"
 }
-
 item {
-  id: 4
-  name: 'JEEPNEY'
+    name: "Septoria_Blight_on_lettuce",
+    id: 4,
+    display_name: "Septoria_Blight_on_lettuce"
 }
-
 item {
-  id: 5
-  name: 'Motorcycle'
+    name: "Viral",
+    id: 5,
+    display_name: "Viral"
 }
-
 item {
-  id: 6
-  name: 'Person'
+    name: "Wilt_and_leaf_blight_on_lettuce",
+    id: 6,
+    display_name: "Wilt_and_leaf_blight_on_lettuce"
 }
-
 item {
-  id: 7
-  name: 'barricade'
+    name: "healthy",
+    id: 7,
+    display_name: "healthy"
 }
-
-item {
-  id: 8
-  name: 'bollard'
-}
-
-item {
-  id: 9
-  name: 'car'
-}
-
-item {
-  id: 10
-  name: 'pedestrian lane'
-}
-
-item {
-  id: 11
-  name: 'stairs'
-}
-
-item {
-  id: 12
-  name: 'tricycle'
-}
-

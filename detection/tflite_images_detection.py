@@ -68,6 +68,7 @@ def framers(image, boxes, classes, scores):
         #print(classes,scores)
         imH, imW, _ = image.shape 
         num_recognized = 0
+        labels1 = []
         for i in range(len(scores)):
                 if (scores[i] > min_conf_threshold):
         
@@ -79,14 +80,14 @@ def framers(image, boxes, classes, scores):
                         xmax = int(min(imW,(boxes[i][3] * imW)))
                 
                         cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
-                        cv2.putText(image, f"{labels[int(classes[i])]} - {round(scores[i]*100,1)}%", (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                        cv2.putText(image, f"{labels[int(classes[i])]} - {round(scores[i]*100,1)}%", (xmin, int((ymin+ymax)/2)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
                         #return image,xmin,ymin,xmax,ymax,labels[int(classes[i])]
-                        return image, f"{labels[int(classes[i])]}"
+                        labels1.append(f"{labels[int(classes[i])]}") 
 
-        return image, ""
+        return image, labels1
 
 if __name__=="__main__":
-        fname = "cone.jpg"#r"images\test\-0ACAD937-70A4-46F0-8E49-0CAE6F942CF2-png_jpg.rf.17ff21f067f60d0e78b4189f11a53ece.jpg"
+        fname = "03_0.png"
         frame = cv2.imread(fname)
         h,w,s = frame.shape  
         #frame = cv2.resize(frame,(int(w/3), int(h/3)))
