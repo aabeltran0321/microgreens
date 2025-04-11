@@ -146,12 +146,12 @@ void loop() {
       else if (device == "PPU2") pin = 24;
       else if (device == "PPU3") pin = 26;
       else if (device == "PPU4") pin = 28;
-      else if (device == "DEHU") pin = 30;
-      else if (device == "OZON") pin = 32;
-      else if (device == "WATR") pin = 34;
-      else if (device == "LGT1") pin = 36;
-      else if (device == "LGT2") pin = 38;
-      else if (device == "LGT3") pin = 48;
+      else if (device == "DEHU") pin = 48;
+      else if (device == "OZON") pin = 38;
+      else if (device == "WATR") pin = 36;
+      else if (device == "LGT1") pin = 30;
+      else if (device == "LGT2") pin = 32;
+      else if (device == "LGT3") pin = 34;
 
       if (pin != -1) {
         digitalWrite(pin, !state);
