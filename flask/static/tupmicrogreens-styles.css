@@ -1,0 +1,193 @@
+body { font-family: Arial, sans-serif; background: url('tupmu_bkg.png') no-repeat center center/cover; height: 100vh;}
+.tabs {
+    display: flex; 
+    border-bottom: 3px solid #423f32;
+    background: white;
+    padding: 10px 0;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.tab {
+    padding: 12px 24px;
+    cursor: pointer;
+    border: none;
+    font-size: 16px;
+    font-weight: bold;
+    color: #423f32;
+    background: none;
+    transition: all 0.3s ease-in-out;
+    margin: 0 10px;
+    border-radius: 5px;
+}
+.dashboard-container{
+    display: flex; 
+    gap: 20px; 
+    justify-content: center; 
+    align-items: center; 
+    width: 100%;
+}
+
+#tabsM{
+    display: none;
+}
+#tabsD{
+    display: flex;
+}
+
+.tab:hover, .tab.active {
+    background-color: #423f32;
+    color: white;
+}
+.tab-content {
+    display: none; 
+    padding: 20px; 
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    height: 90vh;
+}
+.tab-content.active { 
+    display: block; 
+}
+.container {
+    max-width: 800px;
+    margin: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+th {
+    background-color: #423f32;
+    color: white;
+}
+canvas {
+    width: 50% !important;
+    max-height: 400px;
+}
+select {
+    padding: 10px;
+    border: 2px solid #423f32;
+    border-radius: 5px;
+    font-size: 16px;
+    background: white;
+    color: #423f32;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease-in-out;
+}
+select:hover {
+    background: #423f32;
+    color: white;
+}
+select:focus {
+    box-shadow: 0px 0px 8px rgba(0, 123, 255, 0.5);
+}
+
+button{
+    padding: 10px;
+    border: 2px solid #423f32;
+    border-radius: 5px;
+    font-size: 16px;
+    background: white;
+    color: #423f32;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease-in-out;
+}
+
+button:hover {
+    background: #423f32;
+    color: white;
+}
+
+input{
+    font-size: 20px;
+    width: 100%;
+}
+
+.icon1{
+    height: 50px;
+    margin-right: auto;
+    margin-left: 20px;
+}
+
+#tabsLeft {
+    position: fixed;
+    left: 0;
+    top: 60px; /* adjust based on your layout */
+    width: 200px;
+    height: 100%;
+    background-color: #fff;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+}
+#tabsLeft {
+    position: fixed;
+    left: 0;
+    top: 60px; /* adjust based on your layout */
+    width: 200px;
+    height: 100%;
+    background-color: #fff;
+    transform: translateX(150%);
+    transition: transform 0.5s ease;
+    z-index: 999;
+    display: none;
+}
+.about-container{
+    display: flex;
+}
+.hydro-logo{
+    height: 20%;
+}
+@media (orientation: portrait) {
+    body {
+        background-size: cover;
+        height: 120vh;
+      }
+    #tabsD{
+        display: none;
+    }
+    #tabsM{
+        display: flex;
+    }
+    #tabsLeft{
+        position: absolute;
+        background-color: white;
+        width: 80%;
+        height: 100%;
+        top: 0px;
+        right: 0px;
+        padding-top: 30px;
+        display: none;
+    }
+   
+    #tabsLeft.show {
+        transform: translateX(25%);
+        display: block;
+    }
+    .dashboard-container{
+        display: block; 
+        gap: 20px; 
+        justify-content: center; 
+        align-items: center; 
+        width: 100%;
+    }
+    canvas {
+        width: 100% !important;
+        max-height: 400px;
+    }
+    .about-container{
+        display: block;
+    }
+    .hydro-logo{
+        width: 100%;
+    }
+}

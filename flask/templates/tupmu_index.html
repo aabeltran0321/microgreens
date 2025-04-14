@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUP-M | Microgreens</title>
+    <link rel="stylesheet" href="./static/tupmicrogreens-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="icon" href="./static/microgreens-logo.png" type="image/png">
+
+</head>
+<body>
+    <div class="tabs" id="tabsD">
+        <img src="./static/tupmu_hydroponics.png" class="icon1">
+        <div class="tab active" onclick="openTab(event, 'dashboard')"> <i class="ri-dashboard-horizontal-fill"></i> &nbsp;Dashboard</div>
+        <div class="tab" onclick="openTab(event, 'settings')"> <i class="ri-equalizer-fill"></i> &nbsp;Settings</div>
+        <div class="tab" onclick="openTab(event, 'plant-status')"><i class="ri-plant-fill"></i>&nbsp; Plant Status</div>
+        <div class="tab" onclick="openTab(event, 'about-us')"><i class="ri-account-pin-box-fill"></i> &nbsp; About Us</div> 
+    </div>
+
+    <div class="tabs" id="tabsM">
+        <img src="./static/tupmu_hydroponics.png" class="icon1">
+        
+        <div class="tab" onclick="showTabsleft();" style="font-size: 30px;"> <i class="ri-menu-line"></i></div>
+
+    </div>
+
+
+    <div id="tabsLeft">
+        <div class="tab active" onclick="openTab(event, 'dashboard')"> <i class="ri-dashboard-horizontal-fill"></i> &nbsp;Dashboard</div>
+        <div class="tab" onclick="openTab(event, 'settings')"> <i class="ri-equalizer-fill"></i> &nbsp;Settings</div>
+        <div class="tab" onclick="openTab(event, 'plant-status')"><i class="ri-plant-fill"></i>&nbsp; Plant Status</div>
+        <div class="tab" onclick="openTab(event, 'about-us')"><i class="ri-account-pin-box-fill"></i> &nbsp; About Us</div> 
+    </div>
+
+
+    <div id="dashboard" class="tab-content active">
+        <h2>Dashboard</h2>
+        <label for="sensor">Select Sensor:</label>
+        <select id="sensor" onchange="updateTableAndChart()">
+            <option value="pH Level">pH Level</option>
+            <option value="EC">EC</option>
+            <option value="ORP">ORP</option>
+            <option value="Temperature">Temperature</option>
+            <option value="Humidity">Humidity</option>
+        </select>
+        <div class="dashboard-container"><table>
+            <canvas id='sensorChart'></canvas>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th id="sensor-header">pH Level</th>
+                </tr>
+            </thead>
+            <tbody id="sensor-data">
+            </tbody>
+        </table></div>
+    </div>
+    <div id="settings" class="tab-content">
+        <h2>Settings</h2>
+        <form method="POST">
+            <table>
+              <thead>
+                <tr>
+                  <th>Parameters</th>
+                  <th>Low Threshold</th>
+                  <th>High Threshold</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for param in parameters %}
+                <tr>
+                  <td>{{ param }}</td>
+                  <td>
+                    <input type="number" name="{{ param|lower|replace(' ', '_') }}_low"
+                           step="any" required
+                           value="{{ result[param]['low'] }}">
+                  </td>
+                  <td>
+                    <input type="number" name="{{ param|lower|replace(' ', '_') }}_high"
+                           step="any" required
+                           value="{{ result[param]['high'] }}">
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        
+            <button type="submit">Save</button>
+          </form>
+    </div>
+    <div id="plant-status" class="tab-content">
+        <h2>Plant Status</h2>
+        <p>Monitor your plant status here.</p>
+    </div>
+    <div id="about-us" class="tab-content">
+        <h2>About Us</h2>
+        <div class="about-container">
+            <img src="./static/tupmu_logo.png" class="hydro-logo">
+            <p style="margin-left: 5vw; font-size: 20px;">Designing an Automated Indoor Nutrient Film Technique (NFT) Hydroponic System for Microgreens: Integrating Internet of Things (IoT)-Based Artificial Intelligence (AI) Control with Algae Prevention and Disease Detection</p>
+     
+        </div>
+    </div>
+    <script>
+        function openTab(event, tabId) {
+            let tabs = document.querySelectorAll('.tab');
+            let contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+
+<script>
+    function openTab(event, tabId) {
+        let tabs = document.querySelectorAll('.tab');
+        let contents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => tab.classList.remove('active'));
+        contents.forEach(content => content.classList.remove('active'));
+        
+        event.currentTarget.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+        document.getElementById("tabsLeft").classList.remove("show");
+    }
+
+    let chart;
+
+function updateTableAndChart() {
+    const isMobile = window.innerWidth <= 768; // Customize breakpoint as needed
+    const sensor = document.getElementById('sensor').value;
+    document.getElementById('sensor-header').innerText = sensor;
+
+    fetch(`/tupmicrogreens/logs/${encodeURIComponent(sensor)}`)
+        .then(res => res.json())
+        .then(data => {
+            const tableBody = document.getElementById('sensor-data');
+            tableBody.innerHTML = '';
+
+            const labels = [];
+            const values = [];
+
+            data.forEach(row => {
+                labels.push(row.timestamp);
+                values.push(row.value);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${row.timestamp}</td><td>${row.value}</td>`;
+                tableBody.appendChild(tr);
+            });
+
+            updateChart(labels, values, sensor);
+        });
+}
+
+function updateChart(labels, values, label) {
+    const isMobile = window.matchMedia("(orientation: portrait)").matches; // Customize breakpoint as needed
+    const ctx = document.getElementById('sensorChart').getContext('2d');
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                data: values,
+                borderColor: '#423f32',
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { display: !isMobile },
+                y: { display: true }
+            }
+        }
+    });
+}
+
+// Load initial data
+window.onload = updateTableAndChart;
+
+
+</script>
+
+<script>
+    // Toggle #tabsLeft when menu is clicked
+    function showTabsleft(){
+        const tabsLeft = document.getElementById("tabsLeft");
+        tabsLeft.classList.toggle("show");
+    }
+
+    // Modified openTab function to also hide #tabsLeft
+    
+</script>
+</html>
