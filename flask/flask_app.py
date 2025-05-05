@@ -113,6 +113,28 @@ def get_logs(parameter):
     data = [{'timestamp': r[0], 'value': r[1]} for r in rows]
     return jsonify(data)
 
+
+@app.route('/tupmicrogreens/hilo', methods=['POST'])
+def get_hilo_tupmicro():
+    db = get_db()
+    cursor = db.cursor()
+    result = {}
+
+
+    # Fetch the latest thresholds for each parameter
+    for param in parameters:
+        cursor.execute('''
+            SELECT low, high FROM thresholds
+            WHERE parameter = ?
+            ORDER BY id DESC LIMIT 1
+        ''', (param,))
+        row = cursor.fetchone()
+        result[param] = {
+            'low': row[0] if row else '',
+            'high': row[1] if row else ''
+        }
+
+    return jsonify(result)
     
 if __name__ == '__main__':
     init_db()
