@@ -43,6 +43,7 @@ dict1 = get_hilo()
 commands = {
     'ORP': 'OZON',
     'EC': 'PPU3',
+    'pH Level': 'PPU1',
 }
 
 for c in Serial2:
