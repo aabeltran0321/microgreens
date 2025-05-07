@@ -83,11 +83,11 @@ void setup() {
 
   for (int pin : relayPins1) {
     pinMode(pin, OUTPUT);
-    digitalWrite(pin, LOW);
+    digitalWrite(pin, HIGH);
   }
   for (int pin : relayPins2) {
     pinMode(pin, OUTPUT);
-    digitalWrite(pin, LOW);
+    digitalWrite(pin, HIGH);
   }
   dht.begin();
   Serial.println("Microgreens");
