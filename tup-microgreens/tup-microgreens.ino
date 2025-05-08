@@ -155,9 +155,9 @@ void loop() {
 
       if (pin != -1) {
         digitalWrite(pin, !state);
-        Serial.print(device);
-        Serial.print(" is now ");
-        Serial.println(state ? "ON" : "OFF");
+        // Serial.print(device);
+        // Serial.print(" is now ");
+        // Serial.println(state ? "ON" : "OFF");
       }
     }
   }
@@ -196,15 +196,15 @@ void read_ec_value(){
     {
       timepoint = millis();
       ecvoltage = analogRead(ecSensorPin)/1024.0*5000;  // read the voltage
-      Serial.print("voltage:");
-      Serial.print(ecvoltage);
+      // Serial.print("voltage:");
+      // Serial.print(ecvoltage);
       //temperature = readTemperature();  // read your temperature sensor to execute temperature compensation
       ecValue =  ec.readEC(ecvoltage,ectemperature);  // convert voltage to EC with temperature compensation
-      Serial.print("  temperature:");
-      Serial.print(ectemperature,1);
-      Serial.print("^C  EC:");
-      Serial.print(ecValue,1);
-      Serial.println("ms/cm");
+      // Serial.print("  temperature:");
+      // Serial.print(ectemperature,1);
+      // Serial.print("^C  EC:");
+      // Serial.print(ecValue,1);
+      // Serial.println("ms/cm");
     }
     ec.calibration(ecvoltage,ectemperature);  // calibration process by Serail CMD
 }
@@ -226,9 +226,9 @@ void read_orp_value(){
   if(millis() >= printTime)   //Every 800 milliseconds, print a numerical, convert the state of the LED indicator
   {
     printTime=millis()+800;
-    Serial.print("ORP: ");
-    Serial.print((int)orpValue);
-        Serial.println("mV");
-        digitalWrite(LED,1-digitalRead(LED));
-  }
+    // Serial.print("ORP: ");
+    // Serial.print((int)orpValue);
+    //     Serial.println("mV");
+    //     digitalWrite(LED,1-digitalRead(LED));
+
 }
