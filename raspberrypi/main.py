@@ -4,6 +4,8 @@ import time
 import time
 from datetime import datetime, time as dt_time
 from threading import Thread
+import json
+
 tupmParser = Parser("TUPM,", "\r", 1, 200)
 tupmParser1 = Parser("TUPM,", "\n", 1, 200)
 
@@ -29,7 +31,23 @@ def get_hilo():
     response = requests.post(url, verify=False)
 
     return response.json()
+    
+def post2db(parameter, value):
 
+
+    url = 'https://bigboysautomation.pythonanywhere.com/tupmicrogreens/log'  # Change to your server address
+
+    payload = {
+        'parameter': parameter,  # Example parameter
+        'value': value               # Example value
+    }
+
+    headers = {'Content-Type': 'application/json'}
+
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+
+    print('Status Code:', response.status_code)
+    print('Response:', response.text)
 
 def ParsingProcess(c):
     if tupmParser.available(c) or tupmParser1.available(c):
@@ -114,6 +132,7 @@ while True:
                 high = float(dict1[k]['high'])
                 val = dict2[k]
                 command = ""
+                post2db(k, val)
                 if k == "Humidity":
                     if val > high:
                         command = "DEHU,1"
