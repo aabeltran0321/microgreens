@@ -125,13 +125,13 @@ void loop() {
       // Temperature, Humidity, EC, PH, ORP
       Serial.print("TUPM,");
       Serial.print(temperature);
-      Serial.print(", ");
+      Serial.print(",");
       Serial.print(humidity);
-      Serial.print(", ");
+      Serial.print(",");
       Serial.print(ecValue);
-      Serial.print(", ");
+      Serial.print(",");
       Serial.print(phValue);
-      Serial.print(", ");
+      Serial.print(",");
       Serial.println(orpValue);
     } else if (command.length() == 6 && command[4] == ',') {
       
