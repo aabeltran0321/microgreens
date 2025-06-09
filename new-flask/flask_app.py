@@ -8,7 +8,10 @@ DATABASE = f'{extension}tupmicrogreens_thresholds.db'
 app = Flask(__name__)
 
 parameters = ["pH Level", "ORP", "EC", "Temperature", "Humidity"]
-
+DEVICE_LIST = [
+    "solutionA", "solutionB", "phUp", "phDown", "waterPump", "humidifier",
+    "ozoneGenerator", "solenoidValve", "fan1", "fan2", "fan3", "light1", "light2", "light3"
+]
 
 
 # --- DB helpers ---
@@ -48,6 +51,15 @@ def init_db():
                 )
             ''')
 
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS devices (
+                    name TEXT PRIMARY KEY,
+                    state TEXT NOT NULL CHECK(state IN ('ON', 'OFF'))
+                )
+            ''')
+            # Initialize with OFF state if not exists
+            for device in DEVICE_LIST:
+                cursor.execute("INSERT OR IGNORE INTO devices (name, state) VALUES (?, 'OFF')", (device,))
             db.commit()
 def get_sensor_data(parameter):
     conn = sqlite3.connect(DATABASE)  # replace with your actual .db file
@@ -83,6 +95,18 @@ def update_machine_mode_tupm(new_mode):
 
     # Update the mode with the input string
     cursor.execute("UPDATE machine_mode SET mode = ?", (new_mode,))
+
+    db.commit()
+
+def update_commands_tupm(command):
+    db = get_db()
+    cursor = db.cursor()
+
+    # Optional: ensure there's at least one row to update
+    cursor.execute("INSERT INTO commands (comms) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM commands)", (command,))
+
+    # Update the mode with the input string
+    cursor.execute("UPDATE commands SET comms = ?", (command,))
 
     db.commit()
 @app.route('/tupmicrogreens')
@@ -140,8 +164,34 @@ def tupm_settings():
 
 @app.route('/tupmicrogreens/controls')
 def tupm_controls():
-    return render_template('controls_tupm.html')
+    with sqlite3.connect(DATABASE) as conn:
+        c = conn.cursor()
+        c.execute("SELECT name, state FROM devices")
+        states = dict(c.fetchall())
+    return render_template('controls_tupm.html', device_states=states)
+@app.route('/tupmicrogreens/api/controls', methods=['GET'])
+def tupm_get_device_states():
+    with sqlite3.connect(DATABASE) as conn:
+        c = conn.cursor()
+        c.execute("SELECT name, state FROM devices")
+        states = dict(c.fetchall())
+    return jsonify(states)
 
+@app.route('/tupmicrogreens/api/controls', methods=['POST'])
+def tupm_update_device_state():
+    data = request.json
+    device = data.get('device')
+    state = data.get('state')
+
+    if device is None or state not in ['ON', 'OFF']:
+        return jsonify({'success': False, 'message': 'Invalid input'}), 400
+
+    with sqlite3.connect(DATABASE) as conn:
+        c = conn.cursor()
+        c.execute("UPDATE devices SET state = ? WHERE name = ?", (state, device))
+        conn.commit()
+
+    return jsonify({'success': True, 'device': device, 'state': state})
 @app.route('/tupmicrogreens/about')
 def tupm_about():
     return render_template('aboutus_tupm.html')
@@ -150,5 +200,21 @@ def tupm_get_data(datatype):
     data = get_sensor_data(datatype)
     return jsonify(data)
 
+@app.route('/tupmicrogreens/toggle', methods=['POST'])
+def tupm_toggle():
+    data = request.json
+    device = data.get('device')
+    state = data.get('state')
+
+    if device is None or state not in ['ON', 'OFF']:
+        return jsonify({'success': False, 'message': 'Invalid device or state'}), 400
+
+    with sqlite3.connect(DATABASE) as conn:
+        c = conn.cursor()
+        c.execute("UPDATE devices SET state = ? WHERE name = ?", (state, device))
+        conn.commit()
+
+    return jsonify({'success': True, 'device': device, 'state': state})
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True, host="0.0.0.0")

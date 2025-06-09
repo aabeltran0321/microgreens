@@ -34,8 +34,43 @@
 
   <!-- Overlay -->
   <label for="menu-toggle" class="overlay"></label>
-
-  
+<h1 class="title11">Machine Controls</h1>
+<div class="switch-container">
+    {% for device, state in device_states.items() %}
+    <label class="switch-label">
+      <span>{{ device }}</span>
+      <label class="switch">
+        <input type="checkbox" id="{{ device }}" onchange="onToggle(this)" {% if state == 'ON' %}checked{% endif %}>
+        <span class="slider"></span>
+      </label>
+    </label>
+    {% endfor %}
+  </div>
    
 </body>
+<script>
+  function onToggle(checkbox) {
+    const device = checkbox.id;
+    const state = checkbox.checked ? "ON" : "OFF";
+
+    fetch("/tupmicrogreens/toggle", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ device, state })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log(`✅ ${device} updated to ${state}`);
+      } else {
+        console.error(`❌ Failed to update ${device}`);
+      }
+    })
+    .catch(error => {
+      console.error("⚠️ Error:", error);
+    });
+  }
+</script>
 </html>
