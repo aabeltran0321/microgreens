@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hydrophonics Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="./static/tupmicro_styles.css">
+</head>
+<body>
+
+  <!-- Hidden checkbox toggle -->
+  <input type="checkbox" id="menu-toggle" />
+
+  <!-- Header -->
+  <header>
+    <label for="menu-toggle" class="hamburger">
+      <i class="ri-menu-line"></i>
+    </label>
+    <div class="title">
+        <img src="./static/tupmu_hydroponics.png">
+    </div>
+    
+  </header>
+
+  <!-- Side Drawer -->
+  <nav class="drawer">
+    <a href="./tupmicrogreens" class="active">Dashboard</a>
+    <a href="./tupmicrogreens/algae">Algae Status</a>
+    <a href="./tupmicrogreens/settings">Machine Settings</a>
+    <a href="./tupmicrogreens/controls">Machine Controls</a>
+    <a href="./tupmicrogreens/about">About Us</a>
+  </nav>
+
+  <!-- Overlay -->
+  <label for="menu-toggle" class="overlay"></label>
+  
+  <!-- Sensor Cards -->.
+   <h1 class="title11">Current Data</h1>
+  <p id="datetime">Data as of </p>
+  <div class="container">
+    
+    <div class="sensor-card" style="background-color: #f1ebe5;">
+      <div class="sensor-title">Humidity (%)</div>
+      <div class="sensor-value">{{ humidity }}</div>
+    </div>
+    <div class="sensor-card" style="background-color: #f1ebe5;">
+      <div class="sensor-title">ORP (mV) </div>
+      <div class="sensor-value">{{ orp }}</div>
+    </div>
+    <div class="sensor-card" style="background-color: #f1ebe5;">
+      <div class="sensor-title">pH Level</div>
+      <div class="sensor-value">{{ ph }}</div>
+    </div>
+    <div class="sensor-card" style="background-color: #f1ebe5;">
+      <div class="sensor-title">Temperature (°C)</div>
+      <div class="sensor-value">{{ temperature }}</div>
+    </div>
+     
+   
+  </div>
+  <div class="col">
+    <div class="sensor-card " style="background-color: #f1ebe5;">
+        <div class="sensor-title">EC (mS/m)</div>
+        <div class="sensor-value">{{ ec }}</div>
+    </div>
+
+  </div>
+
+   <select id="datatype" name="datatype" class="selects" style="margin-top: 10vh; margin-left: 5vw;">
+      <option value="pH Level">pH level</option>
+      <option value="ORP">ORP</option>
+      <option value="EC">EC</option>
+      <option value="Humidity">Humidity</option>
+      <option value="Temperature">Temperature</option>
+    </select>
+
+  <canvas id="sensorChart" width="400" height="200" style="margin-left: 5vw; margin-top: 5vh;"></canvas>
+  <table id="sensorTable" border="1" style="width: 95vw; margin-left: 2vw;">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('sensorChart').getContext('2d');
+  let chart;
+
+  async function fetchAndDisplayData(datatype) {
+    const response = await fetch(`/tupmicrogreens/get_data/${datatype}`);
+    const data = await response.json();
+
+    const labels = data.map(d => d.timestamp);
+    const values = data.map(d => d.value);
+
+    // Update Chart
+    if (chart) chart.destroy(); // Clear existing chart
+    chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      data: values,
+      borderColor: '#589a3e',
+      backgroundColor: 'rgba(88, 154, 62, 0.2)',
+      fill: true,
+      tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false }  // hides the legend
+    },
+    scales: {
+      x: {
+        title: {
+          display: false  // hides the "Time" label
+        },
+        ticks: {
+          display: false  // hides the tick labels (timestamps)
+        },
+        grid: {
+          display: false  // optional: hides the vertical grid lines
+        }
+      },
+      y: {
+        title: {
+          display: false  // hides the Y-axis label
+        }
+      }
+    }
+  }
+});
+
+
+    // Update Table
+    const tbody = document.getElementById('sensorTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    data.forEach(entry => {
+      const row = `<tr><td>${entry.timestamp}</td><td>${entry.value}</td></tr>`;
+      tbody.insertAdjacentHTML('beforeend', row);
+    });
+  }
+
+  // Initial load
+  const select = document.getElementById('datatype');
+  fetchAndDisplayData(select.value);
+  select.addEventListener('change', () => {
+    fetchAndDisplayData(select.value);
+  });
+</script>
+
+<script>
+  function updateData(){
+    const now = new Date();
+    const formatted = now.toLocaleString(); // e.g., "6/9/2025, 2:37:22 PM"
+    document.getElementById("datetime").textContent = "As of " + formatted;
+  }
+  updateData();
+  setInterval(updateData,1000);
+</script>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hydrophonics Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="../static/tupmicro_styles.css">
+</head>
+<body>
+
+  <!-- Hidden checkbox toggle -->
+  <input type="checkbox" id="menu-toggle" />
+
+  <!-- Header -->
+  <header>
+    <label for="menu-toggle" class="hamburger">
+      <i class="ri-menu-line"></i>
+    </label>
+    <div class="title">
+        <img src="../static/tupmu_hydroponics.png">
+    </div>
+    
+  </header>
+
+  <!-- Side Drawer -->
+  <nav class="drawer">
+    <a href="../tupmicrogreens" >Dashboard</a>
+    <a href="../tupmicrogreens/algae">Algae Status</a>
+    <a href="../tupmicrogreens/settings" class="active">Machine Settings</a>
+    <a href="../tupmicrogreens/controls">Machine Controls</a>
+    <a href="../tupmicrogreens/about" >About Us</a>
+  </nav>
+
+  <!-- Overlay -->
+  <label for="menu-toggle" class="overlay"></label>
+ 
+   <form method="POST">
+
+             <div class="mode-selection" >
+              <label for="mode">Machine Settings:</label>
+              
+              <select id="mode" name="mode">
+                <option value="manual" {% if current_mode == 'manual' %}selected{% endif %}>Manual</option>
+                <option value="preset" {% if current_mode == 'preset' %}selected{% endif %}>Preset</option>
+                <option value="automatic" {% if current_mode == 'automatic' %}selected{% endif %}>Automatic</option>
+              </select>
+            </div>
+            <table style="width: 87vw; margin-left: 2vw;">
+              <thead>
+                <tr>
+                  <th>Parameters</th>
+                  <th>Low Threshold</th>
+                  <th>High Threshold</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for param in parameters %}
+                <tr>
+                  <td>{{ param }}</td>
+                  <td>
+                    <input type="number" name="{{ param|lower|replace(' ', '_') }}_low"
+                           step="any" required
+                           value="{{ result[param]['low'] }}">
+                  </td>
+                  <td>
+                    <input type="number" name="{{ param|lower|replace(' ', '_') }}_high"
+                           step="any" required
+                           value="{{ result[param]['high'] }}">
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        
+            <button type="submit">SAVE</button>
+          </form>
+  
+   
+</body>
+
+</html>
