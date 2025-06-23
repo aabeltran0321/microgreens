@@ -263,15 +263,15 @@ def detect_algae_tupmicrogreen():
         if result['predictions']:
             top = result['predictions'][0]
             return jsonify({
-                "result": top['class'],
+                "result": "ALGAE LIKELY",
                 "confidence": f"{top['confidence'] * 100:.2f}%",
-                "description": f"Algae detected at (x: {top['x']}, y: {top['y']})"
+                "description": "Greenish film detected on water surface, likely algae accumulation"
             })
         else:
             return jsonify({
-                "result": "No Algae Detected",
-                "confidence": "0%",
-                "description": "No detection made"
+                "result": "ALGAE NOT LIKELY",
+                "confidence": "100%",
+                "description": "AI did not detect algae. System is healthy"
             })
 
     except Exception as e:
