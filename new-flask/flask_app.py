@@ -8,8 +8,10 @@ from PIL import Image
 from inference_sdk import InferenceHTTPClient
 
 extension = "./"
-DATABASE = f'{extension}tupmicrogreens_thresholds.db'
+
 app = Flask(__name__)
+
+TUPMICROGREENS_DATABASE = f'{extension}tupmicrogreens_thresholds.db'
 
 parameters = ["pH Level", "ORP", "EC", "Temperature", "Humidity"]
 DEVICE_LIST = [
@@ -27,7 +29,7 @@ CLIENT = InferenceHTTPClient(
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
+        db = g._database = sqlite3.connect(TUPMICROGREENS_DATABASE)
     return db
 
 @app.teardown_appcontext
@@ -37,7 +39,7 @@ def close_connection(exception):
         db.close()
 
 def init_db():
-    if not os.path.exists(DATABASE):
+    if not os.path.exists(TUPMICROGREENS_DATABASE):
         with app.app_context():
             db = get_db()
             cursor = db.cursor()
@@ -71,7 +73,7 @@ def init_db():
                 cursor.execute("INSERT OR IGNORE INTO devices (name, state) VALUES (?, 'OFF')", (device,))
             db.commit()
 def get_sensor_data(parameter):
-    conn = sqlite3.connect(DATABASE)  # replace with your actual .db file
+    conn = sqlite3.connect(TUPMICROGREENS_DATABASE)  # replace with your actual .db file
     cursor = conn.cursor()
     cursor.execute("""
         SELECT timestamp, value FROM logs
@@ -84,7 +86,7 @@ def get_sensor_data(parameter):
 
     return [{'timestamp': ts, 'value': val} for ts, val in reversed(rows)]  # reverse for oldest to newest
 def get_latest(param):
-    conn = sqlite3.connect(DATABASE)
+    conn = sqlite3.connect(TUPMICROGREENS_DATABASE)
     cursor = conn.cursor()
     cursor.execute("""
         SELECT value FROM logs
@@ -174,14 +176,14 @@ def tupm_settings():
 
 @app.route('/tupmicrogreens/controls')
 def tupm_controls():
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         c = conn.cursor()
         c.execute("SELECT name, state FROM devices")
         states = dict(c.fetchall())
     return render_template('controls_tupm.html', device_states=states)
 @app.route('/tupmicrogreens/api/controls', methods=['GET'])
 def tupm_get_device_states():
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         c = conn.cursor()
         c.execute("SELECT name, state FROM devices")
         states = dict(c.fetchall())
@@ -189,7 +191,7 @@ def tupm_get_device_states():
 
 @app.route('/tupmicrogreens/api/machinemode', methods=['GET'])
 def tupm_get_machinemode():
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         c = conn.cursor()
         c.execute("SELECT mode FROM machine_mode LIMIT 1")
         current_mode = c.fetchone()[0]
@@ -204,7 +206,7 @@ def tupm_update_device_state():
     if device is None or state not in ['ON', 'OFF']:
         return jsonify({'success': False, 'message': 'Invalid input'}), 400
 
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         c = conn.cursor()
         c.execute("UPDATE devices SET state = ? WHERE name = ?", (state, device))
         conn.commit()
@@ -217,7 +219,7 @@ def upload_base64_tupmicrogreens():
     if not b64_string:
         return 'No base64 string provided', 400
 
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         cur = conn.cursor()
         cur.execute("INSERT INTO image_cont (img) VALUES (?)", (b64_string,))
         conn.commit()
@@ -225,7 +227,7 @@ def upload_base64_tupmicrogreens():
     return 'Base64 image uploaded successfully!'
 @app.route('/tupmicrogreens/api/view', methods=['GET'])
 def view_image_tupmicrogreen():
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         cur = conn.cursor()
         cur.execute("SELECT img FROM image_cont ORDER BY rowid DESC LIMIT 1")
         row = cur.fetchone()
@@ -241,7 +243,7 @@ def view_image_tupmicrogreen():
 
 @app.route('/tupmicrogreens/api/detect', methods=['POST'])
 def detect_algae_tupmicrogreen():
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         cur = conn.cursor()
         cur.execute("SELECT img FROM image_cont ORDER BY rowid DESC LIMIT 1")
         row = cur.fetchone()
@@ -293,7 +295,7 @@ def tupm_toggle():
     if device is None or state not in ['ON', 'OFF']:
         return jsonify({'success': False, 'message': 'Invalid device or state'}), 400
 
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(TUPMICROGREENS_DATABASE) as conn:
         c = conn.cursor()
         c.execute("UPDATE devices SET state = ? WHERE name = ?", (state, device))
         conn.commit()
