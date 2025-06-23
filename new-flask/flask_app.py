@@ -142,6 +142,7 @@ def tupm_settings():
                 VALUES (?, ?, ?, ?)
             ''', (param, low, high, timestamp))
         db.commit()
+        return jsonify({"message": "Saved!"})
 
     # Fetch the latest thresholds for each parameter
     for param in parameters:
@@ -176,6 +177,14 @@ def tupm_get_device_states():
         c.execute("SELECT name, state FROM devices")
         states = dict(c.fetchall())
     return jsonify(states)
+
+@app.route('/tupmicrogreens/api/machinemode', methods=['GET'])
+def tupm_get_machinemode():
+    with sqlite3.connect(DATABASE) as conn:
+        c = conn.cursor()
+        c.execute("SELECT mode FROM machine_mode LIMIT 1")
+        current_mode = c.fetchone()[0]
+    return jsonify({"machine_mode": current_mode})
 
 @app.route('/tupmicrogreens/api/controls', methods=['POST'])
 def tupm_update_device_state():
@@ -215,6 +224,47 @@ def tupm_toggle():
         conn.commit()
 
     return jsonify({'success': True, 'device': device, 'state': state})
+
+
+@app.route('/tupmicrogreens/hilo', methods=['POST'])
+def get_hilo_tupmicro():
+    db = get_db()
+    cursor = db.cursor()
+    result = {}
+
+
+    # Fetch the latest thresholds for each parameter
+    for param in parameters:
+        cursor.execute('''
+            SELECT low, high FROM thresholds
+            WHERE parameter = ?
+            ORDER BY id DESC LIMIT 1
+        ''', (param,))
+        row = cursor.fetchone()
+        result[param] = {
+            'low': row[0] if row else '',
+            'high': row[1] if row else ''
+        }
+
+    return jsonify(result)
+
+@app.route('/tupmicrogreens/log', methods=['POST'])
+def log_sensor_data_tupm():
+    data = request.get_json()
+    parameter = data.get('parameter')
+    value = data.get('value')
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        INSERT INTO logs (parameter, value, timestamp)
+        VALUES (?, ?, ?)
+    ''', (parameter, value, timestamp))
+    db.commit()
+
+    return jsonify({"message": "Logged successfully"}), 200
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host="0.0.0.0")

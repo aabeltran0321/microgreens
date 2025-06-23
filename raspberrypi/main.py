@@ -6,11 +6,34 @@ from datetime import datetime, time as dt_time
 from threading import Thread
 import json
 
+domain1 = "http://127.0.0.1:5000" #"https://bigboysautomation.pythonanywhere.com"
 tupmParser = Parser("TUPM,", "\r", 1, 200)
 tupmParser1 = Parser("TUPM,", "\n", 1, 200)
 
 floatParser = Parser("Float", "\r", 1, 200)
 floatParser1 = Parser("Float", "\n", 1, 200)
+
+switch = {
+    "ON": 1,
+    "OFF": 0
+}
+
+params_dict = {
+    "Solution A": "PPU3",
+    "Solution B": "PPU4",
+    "pH Up": "PPU1",
+    "pH Down": "PPU2",
+    "Water Pump": "WATR",
+    "Humidifier": "DEHU",
+    "Ozone Generator": "OZON",
+    "Solenoid Valve": "SVLV",
+    "Fan 1": "FAN1",
+    "Fan 2": "FAN2",
+    "Fan 3": "FAN3",
+    "Light 1": "LGT1",
+    "Light 2": "LGT2",
+    "Light 3": "LGT3",
+}
 
 class Scheduler:
     def __init__(self,millis):
@@ -26,16 +49,32 @@ class Scheduler:
 
 def get_hilo():
     # URL endpoint
-    url = "https://bigboysautomation.pythonanywhere.com/tupmicrogreens/hilo"
+    url = f"{domain1}/tupmicrogreens/hilo"
     # Send POST request
     response = requests.post(url, verify=False)
 
     return response.json()
-    
+
+def get_manual_controls():
+    # URL endpoint
+    url = f"{domain1}/tupmicrogreens/api/controls"
+    # Send POST request
+    response = requests.get(url, verify=False)
+
+    return response.json()
+
+def get_machine_mode():
+    # URL endpoint
+    url = f"{domain1}/tupmicrogreens/api/machinemode"
+    # Send POST request
+    response = requests.get(url, verify=False)
+
+    return response.json()["machine_mode"]
+
 def post2db(parameter, value):
 
 
-    url = 'https://bigboysautomation.pythonanywhere.com/tupmicrogreens/log'  # Change to your server address
+    url = f'{domain1}/tupmicrogreens/log'  # Change to your server address
 
     payload = {
         'parameter': parameter,  # Example parameter
@@ -97,15 +136,31 @@ from serialport import HardwareSerial
 
 
 #Serial Port
-dev_tty = "COM2"
+dev_tty = "/dev/ttyACM0"
 Serial1 = HardwareSerial(dev_tty=dev_tty)
 Serial1.begin(9600)
 minSch1 = Scheduler(60000)
 irrSch1 = Scheduler(60000)
 irrCnt = 0
-
+manual_control_sch = Scheduler(2000)
+machine_mode = ""
 EC_Trigg = False
 while True:
+    if manual_control_sch.Event():
+
+       machine_mode = get_machine_mode()
+
+       controls_dict = get_manual_controls()
+
+       for params in controls_dict:
+           val = switch[controls_dict[params]]
+           header = params_dict[params]
+
+           command = f"{header},{val}"
+           Serial1.println(command)
+           time.sleep(0.1)
+
+
     EC_value = 0.0
     if Serial1.available():
         c = Serial1.read()
@@ -117,7 +172,7 @@ while True:
                 Serial1.println("SVLV,0")
             if "off" in floatParser.data.lower() or "off" in floatParser1.data.lower():
                 Serial1.println("SVLV,1")
-        if len(data):
+        if len(data) and machine_mode == "preset":
             dict2 = {}
             dict2['Temperature'] = data[0]
             dict2['Humidity'] = data[1]
@@ -170,6 +225,7 @@ while True:
                 else:
                     for cmd in command:
                         Serial1.println(cmd)
+                        time.sleep(0.1)
     if irrSch1.Event():
         irrCnt += 1
         if irrCnt == 1:

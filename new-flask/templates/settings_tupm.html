@@ -6,6 +6,8 @@
   <title>Hydrophonics Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
   <link rel="stylesheet" href="../static/tupmicro_styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
 </head>
 <body>
 
@@ -35,7 +37,7 @@
   <!-- Overlay -->
   <label for="menu-toggle" class="overlay"></label>
  
-   <form method="POST">
+   <form id="myForm">
 
              <div class="mode-selection" >
               <label for="mode">Machine Settings:</label>
@@ -43,10 +45,9 @@
               <select id="mode" name="mode">
                 <option value="manual" {% if current_mode == 'manual' %}selected{% endif %}>Manual</option>
                 <option value="preset" {% if current_mode == 'preset' %}selected{% endif %}>Preset</option>
-                <option value="automatic" {% if current_mode == 'automatic' %}selected{% endif %}>Automatic</option>
               </select>
             </div>
-            <table style="width: 87vw; margin-left: 2vw;">
+            <table style="width: 100vw;">
               <thead>
                 <tr>
                   <th>Parameters</th>
@@ -78,5 +79,22 @@
   
    
 </body>
+<script src="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+
+<script>
+  document.getElementById('myForm').addEventListener('submit', async function(e) {
+      e.preventDefault(); // Prevent page reload
+
+      const formData = new FormData(this);
+
+      const response = await fetch('./settings', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+      alertify.success(data.message);
+    });
+</script>
 
 </html>
