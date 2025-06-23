@@ -1,7 +1,11 @@
-from flask import Flask, render_template, request, g, jsonify
+from flask import Flask, render_template, request, g, jsonify, send_file
 import sqlite3
 import os
 from datetime import datetime
+import base64
+import io
+from PIL import Image
+from inference_sdk import InferenceHTTPClient
 
 extension = "./"
 DATABASE = f'{extension}tupmicrogreens_thresholds.db'
@@ -13,6 +17,11 @@ DEVICE_LIST = [
     "ozoneGenerator", "solenoidValve", "fan1", "fan2", "fan3", "light1", "light2", "light3"
 ]
 
+# Roboflow client setup
+CLIENT = InferenceHTTPClient(
+    api_url="https://serverless.roboflow.com",
+    api_key="9k6SBo0cQlOkFConFfVR"
+)
 
 # --- DB helpers ---
 def get_db():
@@ -201,6 +210,72 @@ def tupm_update_device_state():
         conn.commit()
 
     return jsonify({'success': True, 'device': device, 'state': state})
+
+@app.route('/tupmicrogreens/api/upload', methods=['POST'])
+def upload_base64_tupmicrogreens():
+    b64_string = request.form.get('base64str')
+    if not b64_string:
+        return 'No base64 string provided', 400
+
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        cur.execute("INSERT INTO image_cont (img) VALUES (?)", (b64_string,))
+        conn.commit()
+
+    return 'Base64 image uploaded successfully!'
+@app.route('/tupmicrogreens/api/view', methods=['GET'])
+def view_image_tupmicrogreen():
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT img FROM image_cont ORDER BY rowid DESC LIMIT 1")
+        row = cur.fetchone()
+
+    if row is None:
+        return 'No image found', 404
+
+    try:
+        img_data = base64.b64decode(row[0])
+        return send_file(io.BytesIO(img_data), mimetype='image/jpeg')
+    except Exception as e:
+        return f"Failed to decode base64: {e}", 500
+
+@app.route('/tupmicrogreens/api/detect', methods=['POST'])
+def detect_algae_tupmicrogreen():
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT img FROM image_cont ORDER BY rowid DESC LIMIT 1")
+        row = cur.fetchone()
+
+    if row is None:
+        return jsonify({"error": "No image found"}), 404
+
+    try:
+        img_data = base64.b64decode(row[0])
+        img_bytes = io.BytesIO(img_data)
+
+        # Save image temporarily in the current directory
+        image_path = os.path.join(extension, "latest.jpg")
+        image = Image.open(img_bytes)
+        image.save(image_path)
+
+        result = CLIENT.infer(image_path, model_id="nft-hydroponics-algae/1")
+
+        if result['predictions']:
+            top = result['predictions'][0]
+            return jsonify({
+                "result": top['class'],
+                "confidence": f"{top['confidence'] * 100:.2f}%",
+                "description": f"Algae detected at (x: {top['x']}, y: {top['y']})"
+            })
+        else:
+            return jsonify({
+                "result": "No Algae Detected",
+                "confidence": "0%",
+                "description": "No detection made"
+            })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 @app.route('/tupmicrogreens/about')
 def tupm_about():
     return render_template('aboutus_tupm.html')

@@ -272,7 +272,13 @@ button[type="submit"] {
 button[type="submit"]:hover {
   background-color: #26322b;
 }
-
+.button1{
+  width: 80vw;
+  margin-left: 10vw;
+  margin-top: 10px;
+  font-size: 25px;
+  padding: 10px;
+}
 
 .switch-container {
     margin-top: 5vh;

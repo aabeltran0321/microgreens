@@ -5,6 +5,7 @@ import time
 from datetime import datetime, time as dt_time
 from threading import Thread
 import json
+import base64
 
 domain1 = "http://127.0.0.1:5000" #"https://bigboysautomation.pythonanywhere.com"
 tupmParser = Parser("TUPM,", "\r", 1, 200)
@@ -54,6 +55,19 @@ def get_hilo():
     response = requests.post(url, verify=False)
 
     return response.json()
+def upload_base64_image(image_path):
+    
+    # Endpoint for uploading base64 image
+    url = f"{domain1}/tupmicrogreens/api/upload"
+
+    # Read and encode the image as base64
+    with open(image_path, "rb") as img_file:
+        b64_string = base64.b64encode(img_file.read()).decode("utf-8")
+
+    # POST request with form data
+    response = requests.post(url, data={"base64str": b64_string}, verify=False)
+
+    return response.text
 
 def get_manual_controls():
     # URL endpoint
@@ -143,6 +157,7 @@ minSch1 = Scheduler(60000)
 irrSch1 = Scheduler(60000)
 irrCnt = 0
 manual_control_sch = Scheduler(2000)
+image_upload_sch = Scheduler(5000)
 machine_mode = ""
 EC_Trigg = False
 while True:
@@ -160,6 +175,9 @@ while True:
            Serial1.println(command)
            time.sleep(0.1)
 
+    if image_upload_sch.Event():
+        image_path = "1747581329747.jpg"
+        print(upload_base64_image(image_path))
 
     EC_value = 0.0
     if Serial1.available():
