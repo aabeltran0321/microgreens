@@ -7,7 +7,7 @@ from threading import Thread
 import json
 import base64
 
-domain1 = "http://127.0.0.1:5000" #"https://bigboysautomation.pythonanywhere.com"
+domain1 = "https://bigboysautomation.pythonanywhere.com"
 tupmParser = Parser("TUPM,", "\r", 1, 200)
 tupmParser1 = Parser("TUPM,", "\n", 1, 200)
 
@@ -141,7 +141,8 @@ def EC_process():
                 isRunning = False
                 EC_Trigg = False
 
-
+# image_path = "1747581330826.jpg"
+# print(upload_base64_image(image_path))
 
 with open("./test.csv", "r", encoding="utf8") as f:
     Serial2 = f.read()
