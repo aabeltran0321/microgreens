@@ -6,6 +6,7 @@ from datetime import datetime, time as dt_time
 from threading import Thread
 import json
 import base64
+import cv2
 
 domain1 = "https://bigboysautomation.pythonanywhere.com"
 tupmParser = Parser("TUPM,", "\r", 1, 200)
@@ -162,7 +163,16 @@ manual_control_sch = Scheduler(2000)
 image_upload_sch = Scheduler(5000)
 machine_mode = ""
 EC_Trigg = False
+cap = cv2.VideoCapture(0)
+frame = None
 while True:
+
+    ret, frame = cap.read()
+
+    if ret:
+        cv2.imshow("frame", frame)
+        cv2.waitKey(1)
+
     if manual_control_sch.Event():
 
        machine_mode = get_machine_mode()
@@ -178,7 +188,10 @@ while True:
            time.sleep(0.1)
 
     if image_upload_sch.Event():
-        image_path = "1747581329747.jpg"
+        if frame is None:
+            continue
+        image_path = "temp_frame.jpg"
+        cv2.imwrite(image_path, frame.copy())
         print(upload_base64_image(image_path))
 
     EC_value = 0.0
