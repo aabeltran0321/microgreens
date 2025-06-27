@@ -34,6 +34,7 @@ params_dict = {
     "Light 1": "LGT1",
     "Light 2": "LGT2",
     "Light 3": "LGT3",
+    "Light 4": "LGT4",
 }
 
 class Scheduler:
