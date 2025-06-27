@@ -1,80 +1,73 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include <DHT.h>
 #include "DFRobot_EC10.h"
+
+// LCD I2C setup
+LiquidCrystal_I2C lcd(0x27, 20, 4); // Change to 0x3F if your LCD has a different address
+
 const int relayPins1[] = {40, 42, 44, 46, 22, 24, 26, 28}; // Relay Module 1
-const int relayPins2[] = {30, 32, 34, 36, 38, 48, 50};          // Relay Module 2
+const int relayPins2[] = {30, 32, 34, 36, 38, 48, 50};     // Relay Module 2
+
 const int toggleSwitchPin = 6;
 const int floatSwitchPin = 23;
 const int dht22Pin = 2;
 const int ecSensorPin = A0;
 const int phSensorPin = A1;
 const int orpSensorPin = A2;
+
 bool toggleState = HIGH;
 bool toggleState2 = HIGH;
 
 DHT dht(dht22Pin, DHT22);
-
-unsigned long int pHavgValue;  //Store the average value of the sensor feedback
-float b;
-int pHbuf[10],pHtemp;
-
-float ecvoltage,ecValue,ectemperature = 25;
 DFRobot_EC10 ec;
 
-#define VOLTAGE 5.00    //system voltage
-#define OFFSET 0        //zero drift voltage
-#define LED 13         //operating instructions
+unsigned long int pHavgValue;
+float b;
+int pHbuf[10], pHtemp;
+
+float ecvoltage, ecValue, ectemperature = 25;
+
+#define VOLTAGE 5.00
+#define OFFSET 0
+#define LED 13
 
 double orpValue;
-
-#define ArrayLenth  40    //times of collection
-#define orpPin 2          //orp meter output,connect to Arduino controller ADC pin
+#define ArrayLenth  40
+#define orpPin A2
 
 int orpArray[ArrayLenth];
-int orpArrayIndex=0;
+int orpArrayIndex = 0;
 
-double avergearray(int* arr, int number){
-  int i;
-  int max,min;
+unsigned long lastLCDUpdate = 0;
+
+double avergearray(int* arr, int number) {
+  int i, max, min;
   double avg;
-  long amount=0;
-  if(number<=0){
-    printf("Error number for the array to avraging!/n");
-    return 0;
-  }
-  if(number<5){   //less than 5, calculated directly statistics
-    for(i=0;i<number;i++){
-      amount+=arr[i];
+  long amount = 0;
+  if (number <= 0) return 0;
+  if (number < 5) {
+    for (i = 0; i < number; i++) amount += arr[i];
+    return (double)amount / number;
+  } else {
+    if (arr[0] < arr[1]) { min = arr[0]; max = arr[1]; }
+    else { min = arr[1]; max = arr[0]; }
+
+    for (i = 2; i < number; i++) {
+      if (arr[i] < min) {
+        amount += min;
+        min = arr[i];
+      } else if (arr[i] > max) {
+        amount += max;
+        max = arr[i];
+      } else {
+        amount += arr[i];
+      }
     }
-    avg = amount/number;
+    avg = (double)amount / (number - 2);
     return avg;
-  }else{
-    if(arr[0]<arr[1]){
-      min = arr[0];max=arr[1];
-    }
-    else{
-      min=arr[1];max=arr[0];
-    }
-    for(i=2;i<number;i++){
-      if(arr[i]<min){
-        amount+=min;        //arr<min
-        min=arr[i];
-      }else {
-        if(arr[i]>max){
-          amount+=max;    //arr>max
-          max=arr[i];
-        }else{
-          amount+=arr[i]; //min<=arr<=max
-        }
-      }//if
-    }//for
-    avg = (double)amount/(number-2);
-  }//if
-  return avg;
+  }
 }
-
-
-
-
 
 void setup() {
   Serial.begin(9600);
@@ -89,16 +82,28 @@ void setup() {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, HIGH);
   }
+
   dht.begin();
+  ec.begin();
+
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Microgreens Ready");
+  delay(2000);
+  lcd.clear();
+
   Serial.println("Microgreens");
 }
 
 void loop() {
-  // Check toggle switch
   read_ec_value();
   read_orp_value();
+
   bool newToggleState = digitalRead(toggleSwitchPin);
   bool newToggleState2 = digitalRead(floatSwitchPin);
+
   if (newToggleState != toggleState) {
     toggleState = newToggleState;
     Serial.print("Toggle Switch: ");
@@ -108,21 +113,18 @@ void loop() {
   if (newToggleState2 != toggleState2) {
     toggleState2 = newToggleState2;
     Serial.print("Float Switch: ");
-    Serial.println(floatSwitchPin ? "OFF" : "ON");
+    Serial.println(toggleState2 ? "OFF" : "ON");
   }
 
-  // Handle serial commands
   if (Serial.available()) {
     String command = Serial.readStringUntil('?');
     command.trim();
-    
+
     if (command == "GETDATA") {
       float temperature = dht.readTemperature();
       float humidity = dht.readHumidity();
       float phValue = phLevel();
 
-
-      // Temperature, Humidity, EC, PH, ORP
       Serial.print("TUPM,");
       Serial.print(temperature);
       Serial.print(",");
@@ -134,10 +136,10 @@ void loop() {
       Serial.print(",");
       Serial.println(orpValue);
     } else if (command.length() == 6 && command[4] == ',') {
-      
       String device = command.substring(0, 4);
       int state = command.substring(5).toInt();
       int pin = -1;
+
       if (device == "SVLV") pin = 40;
       else if (device == "FAN1") pin = 42;
       else if (device == "FAN2") pin = 44;
@@ -153,82 +155,91 @@ void loop() {
       else if (device == "LGT2") pin = 32;
       else if (device == "LGT3") pin = 34;
       else if (device == "LGT4") pin = 50;
+
       if (pin != -1) {
         digitalWrite(pin, !state);
-        // Serial.print(device);
-        // Serial.print(" is now ");
-        // Serial.println(state ? "ON" : "OFF");
       }
     }
   }
+
+  // Update LCD every 1 second
+  if (millis() - lastLCDUpdate > 1000) {
+    lastLCDUpdate = millis();
+
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+    float phValue = phLevel();
+
+    lcd.setCursor(0, 0);
+    lcd.print("T:");
+    lcd.print(temperature, 1);
+    lcd.print((char)223); // degree symbol
+    lcd.print("C H:");
+    lcd.print(humidity, 0);
+    lcd.print("%   ");
+
+    lcd.setCursor(0, 1);
+    lcd.print("EC:");
+    lcd.print(ecValue, 2);
+    lcd.print(" PH:");
+    lcd.print(phValue, 2);
+    lcd.print("   ");
+
+    lcd.setCursor(0, 2);
+    lcd.print("ORP:");
+    lcd.print(orpValue, 0);
+    lcd.print("mV        ");
+
+    lcd.setCursor(0, 3);
+    lcd.print("Toggle:");
+    lcd.print(toggleState ? "OFF" : "ON ");
+    lcd.print(" Float:");
+    lcd.print(toggleState2 ? "OFF" : "ON ");
+  }
 }
 
-
-float phLevel(){
-  for(int i=0;i<10;i++)       //Get 10 sample value from the sensor for smooth the value
-  { 
-    pHbuf[i]=analogRead(phSensorPin);
+float phLevel() {
+  for (int i = 0; i < 10; i++) {
+    pHbuf[i] = analogRead(phSensorPin);
     delay(10);
   }
-  for(int i=0;i<9;i++)        //sort the analog from small to large
-  {
-    for(int j=i+1;j<10;j++)
-    {
-      if(pHbuf[i]>pHbuf[j])
-      {
-        pHtemp=pHbuf[i];
-        pHbuf[i]=pHbuf[j];
-        pHbuf[j]=pHtemp;
+
+  for (int i = 0; i < 9; i++) {
+    for (int j = i + 1; j < 10; j++) {
+      if (pHbuf[i] > pHbuf[j]) {
+        pHtemp = pHbuf[i];
+        pHbuf[i] = pHbuf[j];
+        pHbuf[j] = pHtemp;
       }
     }
   }
-  pHavgValue=0;
-  for(int i=2;i<8;i++)                      //take the average value of 6 center sample
-    pHavgValue+=pHbuf[i];
-  float phValue=(float)pHavgValue*5.0/1024/6; //convert the analog into millivolt
-  phValue=3.5*phValue;                      //convert the millivolt into pH value
-  return (phValue);
+
+  pHavgValue = 0;
+  for (int i = 2; i < 8; i++) pHavgValue += pHbuf[i];
+
+  float phValue = (float)pHavgValue * 5.0 / 1024 / 6;
+  phValue = 3.5 * phValue;
+  return phValue;
 }
 
-void read_ec_value(){
+void read_ec_value() {
   static unsigned long timepoint = millis();
-    if(millis()-timepoint>1000U)  //time interval: 1s
-    {
-      timepoint = millis();
-      ecvoltage = analogRead(ecSensorPin)/1024.0*5000;  // read the voltage
-      // Serial.print("voltage:");
-      // Serial.print(ecvoltage);
-      //temperature = readTemperature();  // read your temperature sensor to execute temperature compensation
-      ecValue =  ec.readEC(ecvoltage,ectemperature);  // convert voltage to EC with temperature compensation
-      // Serial.print("  temperature:");
-      // Serial.print(ectemperature,1);
-      // Serial.print("^C  EC:");
-      // Serial.print(ecValue,1);
-      // Serial.println("ms/cm");
-    }
-    ec.calibration(ecvoltage,ectemperature);  // calibration process by Serail CMD
+  if (millis() - timepoint > 1000U) {
+    timepoint = millis();
+    ecvoltage = analogRead(ecSensorPin) / 1024.0 * 5000;
+    ecValue = ec.readEC(ecvoltage, ectemperature);
+  }
+  ec.calibration(ecvoltage, ectemperature);
 }
 
-void read_orp_value(){
-  static unsigned long orpTimer=millis();   //analog sampling interval
-  static unsigned long printTime=millis();
-  if(millis() >= orpTimer)
-  {
-    orpTimer=millis()+20;
-    orpArray[orpArrayIndex++]=analogRead(orpPin);    //read an analog value every 20ms
-    if (orpArrayIndex==ArrayLenth) {
-      orpArrayIndex=0;
+void read_orp_value() {
+  static unsigned long orpTimer = millis();
+  if (millis() >= orpTimer) {
+    orpTimer = millis() + 20;
+    orpArray[orpArrayIndex++] = analogRead(orpPin);
+    if (orpArrayIndex == ArrayLenth) {
+      orpArrayIndex = 0;
     }
-    orpValue=((30*(double)VOLTAGE*1000)-(75*avergearray(orpArray, ArrayLenth)*VOLTAGE*1000/1024))/75-OFFSET;
-
-    //convert the analog value to orp according the circuit
+    orpValue = ((30 * VOLTAGE * 1000) - (75 * avergearray(orpArray, ArrayLenth) * VOLTAGE * 1000 / 1024)) / 75 - OFFSET;
   }
-  if(millis() >= printTime)   //Every 800 milliseconds, print a numerical, convert the state of the LED indicator
-  {
-    printTime=millis()+800;
-    // Serial.print("ORP: ");
-    // Serial.print((int)orpValue);
-    //     Serial.println("mV");
-    //     digitalWrite(LED,1-digitalRead(LED));
-
 }
