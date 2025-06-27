@@ -1,7 +1,7 @@
 #include <DHT.h>
 #include "DFRobot_EC10.h"
 const int relayPins1[] = {40, 42, 44, 46, 22, 24, 26, 28}; // Relay Module 1
-const int relayPins2[] = {30, 32, 34, 36, 38, 48};          // Relay Module 2
+const int relayPins2[] = {30, 32, 34, 36, 38, 48, 50};          // Relay Module 2
 const int toggleSwitchPin = 6;
 const int floatSwitchPin = 23;
 const int dht22Pin = 2;
@@ -152,7 +152,7 @@ void loop() {
       else if (device == "LGT1") pin = 30;
       else if (device == "LGT2") pin = 32;
       else if (device == "LGT3") pin = 34;
-
+      else if (device == "LGT4") pin = 50;
       if (pin != -1) {
         digitalWrite(pin, !state);
         // Serial.print(device);
