@@ -159,7 +159,7 @@ Serial1.begin(9600)
 minSch1 = Scheduler(60000)
 irrSch1 = Scheduler(60000)
 irrCnt = 0
-manual_control_sch = Scheduler(2000)
+manual_control_sch = Scheduler(5000)
 image_upload_sch = Scheduler(5000)
 machine_mode = ""
 EC_Trigg = False
@@ -185,7 +185,7 @@ while True:
 
            command = f"{header},{val}"
            Serial1.println(command)
-           time.sleep(0.5)
+           time.sleep(0.2)
 
     if image_upload_sch.Event():
         if frame is None:
@@ -258,7 +258,7 @@ while True:
                 else:
                     for cmd in command:
                         Serial1.println(cmd)
-                        time.sleep(0.5)
+                        time.sleep(0.2)
     if irrSch1.Event():
         irrCnt += 1
         if irrCnt == 1:
@@ -272,19 +272,19 @@ while True:
         if dt_time(6, 0) <= now <= dt_time(18, 0):
             print("It is between 6 AM and 6 PM.")
             Serial1.println("LGT1,0")
-            time.sleep(0.5)
+            time.sleep(0.2)
             Serial1.println("LGT2,0")
-            time.sleep(0.5)
+            time.sleep(0.2)
             Serial1.println("LGT3,0")
-            time.sleep(0.5)
+            time.sleep(0.2)
         else:
             print("It is outside 6 AM to 6 PM.")
             Serial1.println("LGT1,1")
-            time.sleep(0.5)
+            time.sleep(0.2)
             Serial1.println("LGT2,1")
-            time.sleep(0.5)
+            time.sleep(0.2)
             Serial1.println("LGT3,1")
-            time.sleep(0.5)
+            time.sleep(0.2)
 
         
         Serial1.println("GETDATA")
