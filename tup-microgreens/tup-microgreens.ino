@@ -98,8 +98,7 @@ void setup() {
 }
 
 void loop() {
-  read_ec_value();
-  read_orp_value();
+  
 
   bool newToggleState = digitalRead(toggleSwitchPin);
   bool newToggleState2 = digitalRead(floatSwitchPin);
@@ -116,12 +115,13 @@ void loop() {
     Serial.println(toggleState2 ? "OFF" : "ON");
   }
 
-  while (Serial.available()) {
-    char srx = Serial.read();
-    int pin = -1;
-    int state = 0;
-    String device = "";
-    if (srx == 'P') {
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('?');
+    command.trim();
+
+    if (command == "GETDATA") {
+      read_ec_value();
+      read_orp_value();
       float temperature = dht.readTemperature();
       float humidity = dht.readHumidity();
       float phValue = phLevel();
@@ -136,142 +136,35 @@ void loop() {
       Serial.print(phValue);
       Serial.print(",");
       Serial.println(orpValue);
-    } 
-    
+    } else if (command.length() == 6 && command[4] == ',') {
+      String device = command.substring(0, 4);
+      int state = command.substring(5).toInt();
+      int pin = -1;
 
-    // Uppercase = ON (state = 1), Lowercase = OFF (state = 0)
-    else if (srx == 'A') {
-      pin = 40;
-      state = 1;
-      device = "SVLV";
-    } else if (srx == 'a') {
-      pin = 40;
-      state = 0;
-      device = "SVLV";
-    } else if (srx == 'B') {
-      pin = 42;
-      state = 1;
-      device = "FAN1";
-    } else if (srx == 'b') {
-      pin = 42;
-      state = 0;
-      device = "FAN1";
-    } else if (srx == 'C') {
-      pin = 44;
-      state = 1;
-      device = "FAN2";
-    } else if (srx == 'c') {
-      pin = 44;
-      state = 0;
-      device = "FAN2";
-    } else if (srx == 'D') {
-      pin = 46;
-      state = 1;
-      device = "FAN3";
-    } else if (srx == 'd') {
-      pin = 46;
-      state = 0;
-      device = "FAN3";
-    } else if (srx == 'E') {
-      pin = 22;
-      state = 1;
-      device = "PPU1";
-    } else if (srx == 'e') {
-      pin = 22;
-      state = 0;
-      device = "PPU1";
-    } else if (srx == 'F') {
-      pin = 24;
-      state = 1;
-      device = "PPU2";
-    } else if (srx == 'f') {
-      pin = 24;
-      state = 0;
-      device = "PPU2";
-    } else if (srx == 'G') {
-      pin = 26;
-      state = 1;
-      device = "PPU3";
-    } else if (srx == 'g') {
-      pin = 26;
-      state = 0;
-      device = "PPU3";
-    } else if (srx == 'H') {
-      pin = 28;
-      state = 1;
-      device = "PPU4";
-    } else if (srx == 'h') {
-      pin = 28;
-      state = 0;
-      device = "PPU4";
-    } else if (srx == 'I') {
-      pin = 48;
-      state = 1;
-      device = "DEHU";
-    } else if (srx == 'i') {
-      pin = 48;
-      state = 0;
-      device = "DEHU";
-    } else if (srx == 'J') {
-      pin = 38;
-      state = 1;
-      device = "OZON";
-    } else if (srx == 'j') {
-      pin = 38;
-      state = 0;
-      device = "OZON";
-    } else if (srx == 'K') {
-      pin = 36;
-      state = 1;
-      device = "WATR";
-    } else if (srx == 'k') {
-      pin = 36;
-      state = 0;
-      device = "WATR";
-    } else if (srx == 'L') {
-      pin = 30;
-      state = 1;
-      device = "LGT1";
-    } else if (srx == 'l') {
-      pin = 30;
-      state = 0;
-      device = "LGT1";
-    } else if (srx == 'M') {
-      pin = 32;
-      state = 1;
-      device = "LGT2";
-    } else if (srx == 'm') {
-      pin = 32;
-      state = 0;
-      device = "LGT2";
-    } else if (srx == 'N') {
-      pin = 34;
-      state = 1;
-      device = "LGT3";
-    } else if (srx == 'n') {
-      pin = 34;
-      state = 0;
-      device = "LGT3";
-    } else if (srx == 'O') {
-      pin = 50;
-      state = 1;
-      device = "LGT4";
-    } else if (srx == 'o') {
-      pin = 50;
-      state = 0;
-      device = "LGT4";
-    }
+      if (device == "SVLV") pin = 40;
+      else if (device == "FAN1") pin = 42;
+      else if (device == "FAN2") pin = 44;
+      else if (device == "FAN3") pin = 46;
+      else if (device == "PPU1") pin = 22;
+      else if (device == "PPU2") pin = 24;
+      else if (device == "PPU3") pin = 26;
+      else if (device == "PPU4") pin = 28;
+      else if (device == "DEHU") pin = 48;
+      else if (device == "OZON") pin = 38;
+      else if (device == "WATR") pin = 36;
+      else if (device == "LGT1") pin = 30;
+      else if (device == "LGT2") pin = 32;
+      else if (device == "LGT3") pin = 34;
+      else if (device == "LGT4") pin = 50;
 
-    if (pin != -1) {
-      digitalWrite(pin, state);
-      Serial.print(device);
-      Serial.print(" (Pin ");
-      Serial.print(pin);
-      Serial.print(") set to state ");
-      Serial.println(state);
+      if (pin != -1) {
+        Serial.print(device);
+        Serial.print(",");
+        Serial.println(state);
+        digitalWrite(pin, !state);
+      }
     }
   }
-  
 
   // Update LCD every 1 second
   if (millis() - lastLCDUpdate > 1000) {
@@ -334,13 +227,17 @@ float phLevel() {
 }
 
 void read_ec_value() {
-  static unsigned long timepoint = millis();
+  /*static unsigned long timepoint = millis();
   if (millis() - timepoint > 1000U) {
     timepoint = millis();
     ecvoltage = analogRead(ecSensorPin) / 1024.0 * 5000;
     ecValue = ec.readEC(ecvoltage, ectemperature);
-  }
+    ec.calibration(ecvoltage, ectemperature);
+  }*/
+  ecvoltage = analogRead(ecSensorPin) / 1024.0 * 5000;
+  ecValue = ec.readEC(ecvoltage, ectemperature);
   ec.calibration(ecvoltage, ectemperature);
+  
 }
 
 void read_orp_value() {
