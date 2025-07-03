@@ -157,6 +157,9 @@ void loop() {
       else if (device == "LGT4") pin = 50;
 
       if (pin != -1) {
+        Serial.print(device);
+        Serial.print(",");
+        Serial.println(state);
         digitalWrite(pin, !state);
       }
     }
