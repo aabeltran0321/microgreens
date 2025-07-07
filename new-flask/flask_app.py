@@ -8,7 +8,7 @@ from PIL import Image
 from inference_sdk import InferenceHTTPClient
 from zoneinfo import ZoneInfo
 import csv
-from io import StringIO
+from io import BytesIO, StringIO
 extension = "./"
 
 app = Flask(__name__)
@@ -366,27 +366,31 @@ def log_sensor_data_tupm():
     return jsonify({"message": "Logged successfully"}), 200
 
 @app.route('/tupmicrogreens/download')
-def download_csv():
-    # Connect to database and fetch data
+def tupmicrogreens_download_csv():
+    # Fetch data from SQLite
     conn = sqlite3.connect(TUPMICROGREENS_DATABASE)
     cursor = conn.cursor()
     cursor.execute("SELECT id, parameter, value, timestamp FROM logs")
     rows = cursor.fetchall()
     conn.close()
 
-    # Prepare CSV in memory
-    output = StringIO()
-    writer = csv.writer(output)
+    # Write CSV to a string buffer first
+    str_buffer = StringIO()
+    writer = csv.writer(str_buffer)
     writer.writerow(['ID', 'Parameter', 'Value', 'Timestamp'])
     writer.writerows(rows)
-    output.seek(0)
 
-    # Generate timestamped filename
+    # Encode string buffer to bytes
+    byte_buffer = BytesIO()
+    byte_buffer.write(str_buffer.getvalue().encode('utf-8'))
+    byte_buffer.seek(0)
+
+    # Timestamped filename
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f'sensor_logs_{timestamp}.csv'
 
     return send_file(
-        output,
+        byte_buffer,
         mimetype='text/csv',
         download_name=filename,
         as_attachment=True

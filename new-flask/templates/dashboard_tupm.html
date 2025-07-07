@@ -66,14 +66,18 @@
     </div>
 
   </div>
-
-   <select id="datatype" name="datatype" class="selects" style="margin-top: 10vh; margin-left: 5vw;">
-      <option value="pH Level">pH level</option>
-      <option value="ORP">ORP</option>
-      <option value="EC">EC</option>
-      <option value="Humidity">Humidity</option>
-      <option value="Temperature">Temperature</option>
-    </select>
+  <form action="./tupmicrogreens/download" method="get" style="margin-top: 10vh;">
+    <button type="submit" style="font-size: 17px;">Download all data as CSV</button>
+</form>
+  <select id="datatype" name="datatype" class="selects" style="margin-left: 5vw;">
+    <option value="pH Level">pH level</option>
+    <option value="ORP">ORP</option>
+    <option value="EC">EC</option>
+    <option value="Humidity">Humidity</option>
+    <option value="Temperature">Temperature</option>
+  </select>
+  
+   
 
   <canvas id="sensorChart" width="400" height="200" style="margin-left: 5vw; margin-top: 5vh;"></canvas>
   <table id="sensorTable" border="1" style="width: 95vw; margin-left: 2vw;">
