@@ -367,27 +367,44 @@ def log_sensor_data_tupm():
 
 @app.route('/tupmicrogreens/download')
 def tupmicrogreens_download_csv():
-    # Fetch data from SQLite
+    # Connect and fetch logs
     conn = sqlite3.connect(TUPMICROGREENS_DATABASE)
     cursor = conn.cursor()
     cursor.execute("SELECT id, parameter, value, timestamp FROM logs")
     rows = cursor.fetchall()
     conn.close()
 
-    # Write CSV to a string buffer first
+    # Convert timestamps to GMT+8 and sort DESC by datetime
+    converted_rows = []
+    for row in rows:
+        id_, parameter, value, timestamp_str = row
+        try:
+            dt_utc = datetime.fromisoformat(timestamp_str).replace(tzinfo=ZoneInfo("UTC"))
+            dt_gmt8 = dt_utc.astimezone(ZoneInfo("Asia/Manila"))
+            timestamp_gmt8 = dt_gmt8.strftime('%Y-%m-%d %H:%M:%S')
+            dt_sort = dt_gmt8  # save for sorting
+        except Exception:
+            timestamp_gmt8 = timestamp_str
+            dt_sort = datetime.min
+        converted_rows.append((dt_sort, [id_, parameter, value, timestamp_gmt8]))
+
+    # Sort by datetime descending (newest first)
+    converted_rows.sort(reverse=True, key=lambda x: x[0])
+    final_rows = [row for _, row in converted_rows]
+
+    # Write CSV
     str_buffer = StringIO()
     writer = csv.writer(str_buffer)
-    writer.writerow(['ID', 'Parameter', 'Value', 'Timestamp'])
-    writer.writerows(rows)
+    writer.writerow(['ID', 'Parameter', 'Value', 'Timestamp (GMT+8)'])
+    writer.writerows(final_rows)
 
-    # Encode string buffer to bytes
+    # Convert to bytes for Flask
     byte_buffer = BytesIO()
     byte_buffer.write(str_buffer.getvalue().encode('utf-8'))
     byte_buffer.seek(0)
 
     # Timestamped filename
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f'tupmicrogreens_sensor_logs_{timestamp}.csv'
+    filename = f'tupmicrogreens_sensor_logs_{datetime.now(ZoneInfo("Asia/Manila")).strftime("%Y%m%d_%H%M%S")}.csv'
 
     return send_file(
         byte_buffer,
@@ -395,7 +412,6 @@ def tupmicrogreens_download_csv():
         download_name=filename,
         as_attachment=True
     )
-
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host="0.0.0.0")
