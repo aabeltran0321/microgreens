@@ -387,7 +387,7 @@ def tupmicrogreens_download_csv():
 
     # Timestamped filename
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f'sensor_logs_{timestamp}.csv'
+    filename = f'tupmicrogreens_sensor_logs_{timestamp}.csv'
 
     return send_file(
         byte_buffer,
