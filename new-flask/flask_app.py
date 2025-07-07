@@ -72,8 +72,22 @@ def init_db():
             for device in DEVICE_LIST:
                 cursor.execute("INSERT OR IGNORE INTO devices (name, state) VALUES (?, 'OFF')", (device,))
             db.commit()
+# def get_sensor_data(parameter):
+#     conn = sqlite3.connect(TUPMICROGREENS_DATABASE)  # replace with your actual .db file
+#     cursor = conn.cursor()
+#     cursor.execute("""
+#         SELECT timestamp, value FROM logs
+#         WHERE parameter = ?
+#         ORDER BY datetime(timestamp) DESC
+#         LIMIT 10
+#     """, (parameter,))
+#     rows = cursor.fetchall()
+#     conn.close()
+
+#     return [{'timestamp': ts, 'value': val} for ts, val in reversed(rows)]  # reverse for oldest to newest
+
 def get_sensor_data(parameter):
-    conn = sqlite3.connect(TUPMICROGREENS_DATABASE)  # replace with your actual .db file
+    conn = sqlite3.connect(TUPMICROGREENS_DATABASE)
     cursor = conn.cursor()
     cursor.execute("""
         SELECT timestamp, value FROM logs
@@ -84,7 +98,14 @@ def get_sensor_data(parameter):
     rows = cursor.fetchall()
     conn.close()
 
-    return [{'timestamp': ts, 'value': val} for ts, val in reversed(rows)]  # reverse for oldest to newest
+    # Convert timestamp to GMT+8
+    result = []
+    for ts, val in reversed(rows):  # reverse for oldest to newest
+        ts_utc = datetime.fromisoformat(ts).replace(tzinfo=ZoneInfo("UTC"))
+        ts_gmt8 = ts_utc.astimezone(ZoneInfo("Asia/Manila"))
+        result.append({'timestamp': ts_gmt8.strftime('%Y-%m-%d %H:%M:%S'), 'value': val})
+
+    return result
 def get_latest(param):
     conn = sqlite3.connect(TUPMICROGREENS_DATABASE)
     cursor = conn.cursor()
