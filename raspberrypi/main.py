@@ -184,6 +184,9 @@ while True:
            header = params_dict[params]
             
            command = f"{header},{val}"
+           if header == "LGT4":
+               Serial1.println(command)
+               time.sleep(0.2)
            if machine_mode == "manual":
                Serial1.println(command)
                time.sleep(0.2)
