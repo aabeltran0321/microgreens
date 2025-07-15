@@ -182,10 +182,11 @@ while True:
        for params in controls_dict:
            val = switch[controls_dict[params]]
            header = params_dict[params]
-
+            
            command = f"{header},{val}"
-           Serial1.println(command)
-           time.sleep(0.2)
+           if machine_mode == "manual":
+               Serial1.println(command)
+               time.sleep(0.2)
 
     if image_upload_sch.Event():
         if frame is None:
