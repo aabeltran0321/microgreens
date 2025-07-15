@@ -14,7 +14,7 @@ const int floatSwitchPin = 23;
 const int dht22Pin = 2;
 const int ecSensorPin = A0;
 const int phSensorPin = A1;
-const int orpSensorPin = A2;
+// const int orpSensorPin = A2;
 
 bool toggleState = HIGH;
 bool toggleState2 = HIGH;
@@ -34,7 +34,7 @@ float ecvoltage, ecValue, ectemperature = 25;
 
 double orpValue;
 #define ArrayLenth  40
-#define orpPin A2
+#define orpPin 2
 
 int orpArray[ArrayLenth];
 int orpArrayIndex = 0;
