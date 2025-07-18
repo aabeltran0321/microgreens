@@ -96,7 +96,7 @@ void loop() {
     Serial.println(toggleState2 ? "OFF" : "ON");
   }
 
-  if (Serial.available()) {
+  while (Serial.available()) {
     char srx = Serial.read();
 
     if(commandParse.DataReceived(srx)){
