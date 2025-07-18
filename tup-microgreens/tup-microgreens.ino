@@ -1,3 +1,6 @@
+#include "Parser.h"
+Parser commandParse("CMD,",'\r',1);
+
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "DHT.h"
@@ -94,48 +97,52 @@ void loop() {
   }
 
   if (Serial.available()) {
-    String command = Serial.readStringUntil('?');
-    command.trim();
+    char srx = Serial.read()
 
-    if (command == "GETDATA") {
-      Serial.print("TUPM,");
-      Serial.print(temp);
-      Serial.print(",");
-      Serial.print(humid);
-      Serial.print(",");
-      Serial.print(ecVal);
-      Serial.print(",");
-      Serial.print(ph);
-      Serial.print(",");
-      Serial.println(orp);
-    } else if (command.length() == 6 && command[4] == ',') {
-      String device = command.substring(0, 4);
-      int state = command.substring(5).toInt();
-      int pin = -1;
-
-      if (device == "SVLV") pin = 40;
-      else if (device == "FAN1") pin = 42;
-      else if (device == "FAN2") pin = 44;
-      else if (device == "FAN3") pin = 46;
-      else if (device == "PPU1") pin = 22;
-      else if (device == "PPU2") pin = 24;
-      else if (device == "PPU3") pin = 26;
-      else if (device == "PPU4") pin = 28;
-      else if (device == "DEHU") pin = 48;
-      else if (device == "OZON") pin = 38;
-      else if (device == "WATR") pin = 36;
-      else if (device == "LGT1") pin = 30;
-      else if (device == "LGT2") pin = 32;
-      else if (device == "LGT3") pin = 34;
-      else if (device == "LGT4") pin = 50;
-
-      if (pin != -1) {
-        Serial.print(device);
+    if(commandParse.DataReceived(srx)){
+      String command =  commandParse.data;
+      if (command == "GETDATA") {
+        Serial.print("TUPM,");
+        Serial.print(temp);
         Serial.print(",");
-        Serial.println(state);
-        digitalWrite(pin, !state);
+        Serial.print(humid);
+        Serial.print(",");
+        Serial.print(ecVal);
+        Serial.print(",");
+        Serial.print(ph);
+        Serial.print(",");
+        Serial.println(orp);
+      } else if (command.length() == 6 && command[4] == ',') {
+        String device = command.substring(0, 4);
+        int state = command.substring(5).toInt();
+        int pin = -1;
+
+        if (device == "SVLV") pin = 40;
+        else if (device == "FAN1") pin = 42;
+        else if (device == "FAN2") pin = 44;
+        else if (device == "FAN3") pin = 46;
+        else if (device == "PPU1") pin = 22;
+        else if (device == "PPU2") pin = 24;
+        else if (device == "PPU3") pin = 26;
+        else if (device == "PPU4") pin = 28;
+        else if (device == "DEHU") pin = 48;
+        else if (device == "OZON") pin = 38;
+        else if (device == "WATR") pin = 36;
+        else if (device == "LGT1") pin = 30;
+        else if (device == "LGT2") pin = 32;
+        else if (device == "LGT3") pin = 34;
+        else if (device == "LGT4") pin = 50;
+
+        if (pin != -1) {
+          Serial.print(device);
+          Serial.print(",");
+          Serial.println(state);
+          digitalWrite(pin, !state);
+        }
       }
     }
+
+    
   }
 
   // Update LCD every 1 second
