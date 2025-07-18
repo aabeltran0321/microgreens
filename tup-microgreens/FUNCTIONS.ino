@@ -122,7 +122,7 @@ void readEc()
   Serial.print("  Humid:");  Serial.print(humid, 1);
   Serial.print("  PH:");  Serial.print(ph, 1);
   Serial.print("  Orp:");  Serial.println(orp, 1);*/
-  float temp1 = temp;
+  int temp1 = temp;
 
   ec.calibration(volt, temp); // calibration process by Serail CMD
 }
