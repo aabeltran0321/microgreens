@@ -117,21 +117,39 @@ void loop() {
         int state = command.substring(5).toInt();
         int pin = -1;
 
-        if (device == "SVLV") pin = 40;
-        else if (device == "FAN1") pin = 42;
-        else if (device == "FAN2") pin = 44;
-        else if (device == "FAN3") pin = 46;
-        else if (device == "PPU1") pin = 22;
-        else if (device == "PPU2") pin = 24;
-        else if (device == "PPU3") pin = 26;
-        else if (device == "PPU4") pin = 28;
-        else if (device == "DEHU") pin = 48;
-        else if (device == "OZON") pin = 38;
-        else if (device == "WATR") pin = 36;
-        else if (device == "LGT1") pin = 30;
-        else if (device == "LGT2") pin = 32;
-        else if (device == "LGT3") pin = 34;
-        else if (device == "LGT4") pin = 50;
+        if (device == "SVLV") {
+          pin = 40;
+        } else if (device == "FAN1") {
+          pin = 42;
+        } else if (device == "FAN2") {
+          pin = 44;
+        } else if (device == "FAN3") {
+          pin = 46;
+        } else if (device == "PPU1") {
+          pin = 22;
+        } else if (device == "PPU2") {
+          pin = 24;
+        } else if (device == "PPU3") {
+          pin = 26;
+        } else if (device == "PPU4") {
+          pin = 28;
+        } else if (device == "DEHU") {
+          pin = 48;
+        } else if (device == "OZON") {
+          pin = 38;
+        } else if (device == "WATR") {
+          pin = 36;
+        } else if (device == "LGT1") {
+          pin = 30;
+        } else if (device == "LGT2") {
+          pin = 32;
+        } else if (device == "LGT3") {
+          pin = 34;
+        } else if (device == "LGT4") {
+          pin = 50;
+        } else {
+          pin = -1; // Unknown device
+        }
 
         if (pin != -1) {
           Serial.print(device);
