@@ -97,7 +97,7 @@ void loop() {
   }
 
   if (Serial.available()) {
-    char srx = Serial.read()
+    char srx = Serial.read();
 
     if(commandParse.DataReceived(srx)){
       String command =  commandParse.data;
