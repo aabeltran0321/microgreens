@@ -103,11 +103,11 @@ void loop() {
       Serial.print(",");
       Serial.print(humid);
       Serial.print(",");
-      Serial.print(orp);
+      Serial.print(ecVal);
       Serial.print(",");
       Serial.print(ph);
       Serial.print(",");
-      Serial.println(orpValue);
+      Serial.println(orp);
     } else if (command.length() == 6 && command[4] == ',') {
       String device = command.substring(0, 4);
       int state = command.substring(5).toInt();
