@@ -67,7 +67,7 @@ void setup() {
   dht.begin();
   ec.begin();
 
-  lcd.init();
+  lcd.begin();
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0);
