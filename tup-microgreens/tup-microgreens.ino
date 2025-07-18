@@ -1,7 +1,28 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
-#include <DHT.h>
+#include "DHT.h"
+#define DHTPIN 2     // what digital pin we're connected to
+// Uncomment whatever type you're using!
+//#define DHTTYPE DHT11   // DHT 11
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
 #include "DFRobot_EC10.h"
+#include <EEPROM.h>
+DFRobot_EC10 ec;
+
+float temp, ph, orp, humid, ecVal, volt;
+float tempUp, tempDwn, phLUp, phLDwn, orpUp, orpDwn, humidUp, humidDwn, ecUp, ecDwn;
+int adcPH, adcORP, adcEC;
+unsigned long tAdcORP, tAdcPH, tAdcEC;
+int phInt, pumpFl, idx;
+char sBuff[25] = "";
+String dates, times;
+int hrs, mn, sc;
+char bRec[100], dummy = 0;
+char *p, *n;
+
+
 
 // LCD I2C setup
 LiquidCrystal_I2C lcd(0x27, 20, 4); // Change to 0x3F if your LCD has a different address
@@ -11,63 +32,20 @@ const int relayPins2[] = {30, 32, 34, 36, 38, 48, 50};     // Relay Module 2
 
 const int toggleSwitchPin = 6;
 const int floatSwitchPin = 23;
-const int dht22Pin = 2;
-const int ecSensorPin = A0;
-const int phSensorPin = A1;
-// const int orpSensorPin = A2;
 
 bool toggleState = HIGH;
 bool toggleState2 = HIGH;
 
-DHT dht(dht22Pin, DHT22);
-DFRobot_EC10 ec;
-
-unsigned long int pHavgValue;
-float b;
-int pHbuf[10], pHtemp;
-
-float ecvoltage, ecValue, ectemperature = 25;
-
-#define VOLTAGE 5.00
-#define OFFSET 0
-#define LED 13
-
-double orpValue;
-#define ArrayLenth  40
-#define orpPin 2
-
-int orpArray[ArrayLenth];
-int orpArrayIndex = 0;
-
 unsigned long lastLCDUpdate = 0;
 
-double avergearray(int* arr, int number) {
-  int i, max, min;
-  double avg;
-  long amount = 0;
-  if (number <= 0) return 0;
-  if (number < 5) {
-    for (i = 0; i < number; i++) amount += arr[i];
-    return (double)amount / number;
-  } else {
-    if (arr[0] < arr[1]) { min = arr[0]; max = arr[1]; }
-    else { min = arr[1]; max = arr[0]; }
+#define orpPin      A1    //orp meter output,connect to Arduino controller ADC pin
+#define VOLTAGE     5.00  //system voltage
+#define OFFSET      0     //zero drift voltage
+#define ArrayLenth  40    //times of collection
 
-    for (i = 2; i < number; i++) {
-      if (arr[i] < min) {
-        amount += min;
-        min = arr[i];
-      } else if (arr[i] > max) {
-        amount += max;
-        max = arr[i];
-      } else {
-        amount += arr[i];
-      }
-    }
-    avg = (double)amount / (number - 2);
-    return avg;
-  }
-}
+double orpValue;
+int orpArray[ArrayLenth];
+int orpArrayIndex = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -86,7 +64,7 @@ void setup() {
   dht.begin();
   ec.begin();
 
-  lcd.begin();
+  lcd.init();
   lcd.backlight();
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -120,20 +98,14 @@ void loop() {
     command.trim();
 
     if (command == "GETDATA") {
-      read_ec_value();
-      read_orp_value();
-      float temperature = dht.readTemperature();
-      float humidity = dht.readHumidity();
-      float phValue = phLevel();
-
       Serial.print("TUPM,");
-      Serial.print(temperature);
+      Serial.print(temp);
       Serial.print(",");
-      Serial.print(humidity);
+      Serial.print(humid);
       Serial.print(",");
-      Serial.print(ecValue);
+      Serial.print(orp);
       Serial.print(",");
-      Serial.print(phValue);
+      Serial.print(ph);
       Serial.print(",");
       Serial.println(orpValue);
     } else if (command.length() == 6 && command[4] == ',') {
@@ -170,28 +142,26 @@ void loop() {
   if (millis() - lastLCDUpdate > 1000) {
     lastLCDUpdate = millis();
 
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
-    float phValue = phLevel();
+    getSensor();
 
     lcd.setCursor(0, 0);
     lcd.print("T:");
-    lcd.print(temperature, 1);
+    lcd.print(temp, 1);
     lcd.print((char)223); // degree symbol
     lcd.print("C H:");
-    lcd.print(humidity, 0);
+    lcd.print(humid, 0);
     lcd.print("%   ");
 
     lcd.setCursor(0, 1);
     lcd.print("EC:");
-    lcd.print(ecValue, 2);
+    lcd.print(ecVal, 2);
     lcd.print(" PH:");
-    lcd.print(phValue, 2);
+    lcd.print(ph, 2);
     lcd.print("   ");
 
     lcd.setCursor(0, 2);
     lcd.print("ORP:");
-    lcd.print(orpValue, 0);
+    lcd.print(orp, 0);
     lcd.print("mV        ");
 
     lcd.setCursor(0, 3);
@@ -199,55 +169,5 @@ void loop() {
     lcd.print(toggleState ? "OFF" : "ON ");
     lcd.print(" Float:");
     lcd.print(toggleState2 ? "OFF" : "ON ");
-  }
-}
-
-float phLevel() {
-  for (int i = 0; i < 10; i++) {
-    pHbuf[i] = analogRead(phSensorPin);
-    delay(10);
-  }
-
-  for (int i = 0; i < 9; i++) {
-    for (int j = i + 1; j < 10; j++) {
-      if (pHbuf[i] > pHbuf[j]) {
-        pHtemp = pHbuf[i];
-        pHbuf[i] = pHbuf[j];
-        pHbuf[j] = pHtemp;
-      }
-    }
-  }
-
-  pHavgValue = 0;
-  for (int i = 2; i < 8; i++) pHavgValue += pHbuf[i];
-
-  float phValue = (float)pHavgValue * 5.0 / 1024 / 6;
-  phValue = 3.5 * phValue;
-  return phValue;
-}
-
-void read_ec_value() {
-  /*static unsigned long timepoint = millis();
-  if (millis() - timepoint > 1000U) {
-    timepoint = millis();
-    ecvoltage = analogRead(ecSensorPin) / 1024.0 * 5000;
-    ecValue = ec.readEC(ecvoltage, ectemperature);
-    ec.calibration(ecvoltage, ectemperature);
-  }*/
-  ecvoltage = analogRead(ecSensorPin) / 1024.0 * 5000;
-  ecValue = ec.readEC(ecvoltage, ectemperature);
-  ec.calibration(ecvoltage, ectemperature);
-  
-}
-
-void read_orp_value() {
-  static unsigned long orpTimer = millis();
-  if (millis() >= orpTimer) {
-    orpTimer = millis() + 20;
-    orpArray[orpArrayIndex++] = analogRead(orpPin);
-    if (orpArrayIndex == ArrayLenth) {
-      orpArrayIndex = 0;
-    }
-    orpValue = ((30 * VOLTAGE * 1000) - (75 * avergearray(orpArray, ArrayLenth) * VOLTAGE * 1000 / 1024)) / 75 - OFFSET;
   }
 }
