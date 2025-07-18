@@ -117,11 +117,12 @@ void readEc()
   float temperature = 25.0;  // read your temperature sensor to execute temperature compensation
   ecVal =  ec.readEC(volt, temperature); // convert voltage to EC with temperature compensation
   ecVal = ecVal / 9.1;
-  Serial.print("  temp:");  Serial.print(temp, 1);
+  /*Serial.print("  temp:");  Serial.print(temp, 1);
   Serial.print("^C  EC:"); Serial.print(ecVal, 1);  Serial.print("ms/cm");
   Serial.print("  Humid:");  Serial.print(humid, 1);
   Serial.print("  PH:");  Serial.print(ph, 1);
-  Serial.print("  Orp:");  Serial.println(orp, 1);
+  Serial.print("  Orp:");  Serial.println(orp, 1);*/
+  float temp1 = temp;
 
   ec.calibration(volt, temp); // calibration process by Serail CMD
 }
