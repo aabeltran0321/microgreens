@@ -40,6 +40,7 @@ bool toggleState = HIGH;
 bool toggleState2 = HIGH;
 
 unsigned long lastLCDUpdate = 0;
+long prevMillis11 = 0;
 
 #define orpPin      A1    //orp meter output,connect to Arduino controller ADC pin
 #define VOLTAGE     5.00  //system voltage
@@ -98,23 +99,14 @@ void loop() {
 
   while (Serial.available()) {
     char srx = Serial.read();
-
+    //Serial.print(srx);
     if(commandParse.DataReceived(srx)){
       String command =  commandParse.data;
-      if (command == "GETDATA") {
-        Serial.print("TUPM,");
-        Serial.print(temp);
-        Serial.print(",");
-        Serial.print(humid);
-        Serial.print(",");
-        Serial.print(ecVal);
-        Serial.print(",");
-        Serial.print(ph);
-        Serial.print(",");
-        Serial.println(orp);
-      } else if (command.length() == 6 && command[4] == ',') {
-        String device = command.substring(0, 4);
-        int state = command.substring(5).toInt();
+       //Serial.println(command);
+       int commaIndex = command.indexOf(',');
+        if (commaIndex != -1) {
+          String device = command.substring(0, commaIndex);
+          int value = command.substring(commaIndex + 1).toInt();
         int pin = -1;
 
         if (device == "SVLV") {
@@ -154,17 +146,20 @@ void loop() {
         if (pin != -1) {
           Serial.print(device);
           Serial.print(",");
-          Serial.println(state);
-          digitalWrite(pin, !state);
+          Serial.println(value);
+          digitalWrite(pin, !value);
+        }
+        } else {
+          Serial.println("Invalid CSV format");
         }
       }
     }
 
     
-  }
+  
 
   // Update LCD every 1 second
-  if (millis() - lastLCDUpdate > 1000) {
+  if (millis() - lastLCDUpdate > 2000) {
     lastLCDUpdate = millis();
 
     getSensor();
@@ -194,5 +189,20 @@ void loop() {
     lcd.print(toggleState ? "OFF" : "ON ");
     lcd.print(" Float:");
     lcd.print(toggleState2 ? "OFF" : "ON ");
+    
+  }
+
+  if((millis()-prevMillis11)>30000){
+    Serial.print("TUPM,");
+    Serial.print(temp);
+    Serial.print(",");
+    Serial.print(humid);
+    Serial.print(",");
+    Serial.print(ecVal);
+    Serial.print(",");
+    Serial.print(ph);
+    Serial.print(",");
+    Serial.println(orp);
+    prevMillis11 = millis();
   }
 }
