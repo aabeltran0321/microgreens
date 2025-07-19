@@ -116,32 +116,81 @@ def ParsingProcess(c):
             data = data.replace("\n", "")
             data = data.split(",")
         dict1 = get_hilo()
+        print("tupm: ",data)
         return dict1, [float(d) for d in data]
     return {},[]
-
+    
+runningOnce = False
+phRunningOnce = False
 def EC_process():
-    global Serial1, EC_Trigg
+    global Serial1, EC_Trigg, runningOnce
     sch1 = Scheduler(1000)
     isRunning = True
     ECcnt = 0
     vol_time_amount = 34
+    print("starting ec process")
     while isRunning:
         if sch1.Event():
             if ECcnt == 0:
-                Serial1.println("PPU3,1")
-                Serial1.println("PPU4,0")
+                Serial1.println("CMD,PPU3,1")
+                time.sleep(1)
+                Serial1.println("CMD,PPU4,0")
             elif ECcnt == vol_time_amount:
-                Serial1.println("PPU3,0")
-                Serial1.println("PPU4,0")
+                Serial1.println("CMD,PPU3,0")
+                time.sleep(1)
+                Serial1.println("CMD,PPU4,0")
             elif ECcnt == (300 + vol_time_amount):
-                Serial1.println("PPU3,0")
-                Serial1.println("PPU4,1")
+                Serial1.println("CMD,PPU3,0")
+                time.sleep(1)
+                Serial1.println("CMD,PPU4,1")
             elif ECcnt == (300 + vol_time_amount + vol_time_amount):
-                Serial1.println("PPU3,0")
-                Serial1.println("PPU4,0")
+                Serial1.println("CMD,PPU3,0")
+                time.sleep(1)
+                Serial1.println("CMD,PPU4,0")
             elif ECcnt == (900 + vol_time_amount + vol_time_amount):
                 isRunning = False
                 EC_Trigg = False
+                
+            ECcnt +=1
+    runningOnce = False
+
+def phProcess(val,high,low):
+    global phRunningOnce
+    sch2 = Scheduler(1000)
+    phCnt = 0
+    while True:
+        if sch2.Event():
+            if phCnt == 0:
+                if val > high:
+                    Serial1.println("CMD,PPU2,1")
+                    time.sleep(1)
+                    Serial1.println("CMD,PPU1,0")
+                    time.sleep(1)
+
+                elif val < low:
+                    Serial1.println("CMD,PPU1,1")
+                    time.sleep(1)
+                    Serial1.println("CMD,PPU2,0")
+                    time.sleep(1)
+                else:
+                    Serial1.println("CMD,PPU2,0")
+                    time.sleep(1)
+                    Serial1.println("CMD,PPU1,0")
+                    time.sleep(1)
+                    return
+            if phCnt == 20:
+                Serial1.println("CMD,PPU2,0")
+                time.sleep(1)
+                Serial1.println("CMD,PPU1,0")
+                time.sleep(1)
+            if phCnt == 300:
+                phRunningOnce = True
+                return
+
+            phCnt +=1
+
+
+
 
 # image_path = "1747581330826.jpg"
 # print(upload_base64_image(image_path))
@@ -156,20 +205,24 @@ from serialport import HardwareSerial
 dev_tty = "/dev/ttyACM0"
 Serial1 = HardwareSerial(dev_tty=dev_tty)
 Serial1.begin(9600)
-minSch1 = Scheduler(60000)
+minSch1 = Scheduler(30000)
 irrSch1 = Scheduler(60000)
 irrCnt = 0
-manual_control_sch = Scheduler(5000)
+manual_control_sch = Scheduler(3000)
 image_upload_sch = Scheduler(5000)
 machine_mode = ""
 EC_Trigg = False
-cap = cv2.VideoCapture(0)
+try:
+    cap = cv2.VideoCapture(0)
+except:
+    cap = cv2.VideoCapture(1)
 frame = None
 while True:
 
     ret, frame = cap.read()
 
     if ret:
+        print("capturing frames from webcam")
         cv2.imshow("frame", frame)
         cv2.waitKey(1)
 
@@ -180,16 +233,24 @@ while True:
        controls_dict = get_manual_controls()
 
        for params in controls_dict:
+           ret, frame = cap.read()
+           if ret:
+               print("capturing frames from webcam")
+               cv2.imshow("frame", frame)
+               cv2.waitKey(1)
+           
            val = switch[controls_dict[params]]
            header = params_dict[params]
-            
-           command = f"{header},{val}"
-           if header == "LGT4":
-               Serial1.println(command)
-               time.sleep(0.2)
+           
            if machine_mode == "manual":
-               Serial1.println(command)
-               time.sleep(0.2)
+               command11 = f"CMD,{header},{val}?"
+               Serial1.println(command11)
+               time.sleep(1)
+           if header == "LGT4":
+               command11 = f"CMD,{header},{val}?"
+               Serial1.println(command11)
+               time.sleep(1)
+               
 
     if image_upload_sch.Event():
         if frame is None:
@@ -199,17 +260,21 @@ while True:
         print(upload_base64_image(image_path))
 
     EC_value = 0.0
-    if Serial1.available():
+    data = ""
+    while Serial1.available():
         c = Serial1.read()
         c = c.decode()
+        print("serial: ", c)
         dict1, data = ParsingProcess(c)
-
+        
         if floatParser.available(c) or floatParser1.available(c):
             if "on" in floatParser.data.lower() or "on" in floatParser1.data.lower():
-                Serial1.println("SVLV,0")
+                Serial1.println("CMD,SVLV,0")
+                time.sleep(1)
             if "off" in floatParser.data.lower() or "off" in floatParser1.data.lower():
-                Serial1.println("SVLV,1")
-        if len(data) and machine_mode == "preset":
+                Serial1.println("CMD,SVLV,1")
+                time.sleep(1)
+        if len(data):
             dict2 = {}
             dict2['Temperature'] = data[0]
             dict2['Humidity'] = data[1]
@@ -217,6 +282,7 @@ while True:
             dict2['pH Level'] = data[3]
             dict2['ORP'] = data[4]
             EC_value = data[2]
+            
 
             
             for k in dict1:
@@ -243,53 +309,51 @@ while True:
                         command = ["FAN1,0","FAN2,0", "FAN3,0"]
 
                 elif k == "pH Level":
-                    if val > high:
-                        command = ["PPU2,1", "PPU1,0"]
+                    print(val,high,low)
+                    if not(phRunningOnce):
+                        phRunningOnce = True
+                        Thread2 = Thread(target=phProcess, args=(val, high, low))
+                        Thread2.start()
+                    
 
+                elif k == "EC" and not(EC_Trigg) and machine_mode == "preset":
                     if val < low:
-                        command = ["PPU1,1", "PPU2,0"]
-                    else:
-                        command = ["PPU1,0", "PPU2,0"]
+                        if not(runningOnce):
+                            runningOnce = True
+                            Thread1 = Thread(target=EC_process)
+                            Thread1.start()
 
-                elif k == "EC" and not(EC_Trigg):
-                    if val < low:
-                        Thread1 = Thread(target=EC_process)
-                        Thread1.start()
-
-
-                if isinstance(command, str):
-                    Serial1.println(command)
+                if isinstance(command, str) and len(command) and machine_mode == "preset":
+                    Serial1.println("CMD,"+command)
+                    time.sleep(1)
                 else:
                     for cmd in command:
-                        Serial1.println(cmd)
-                        time.sleep(0.2)
+                        Serial1.println("CMD,"+cmd)
+                        time.sleep(1)
     if irrSch1.Event():
         irrCnt += 1
         if irrCnt == 1:
-            Serial1.println("WATR,1")
+            Serial1.println("CMD,WATR,1")
         if irrCnt == 16:
-            Serial1.println("WATR,0")
+            Serial1.println("CMD,WATR,0")
         if irrCnt == 30:
             irrCnt = 0
     if minSch1.Event():
         now = datetime.now().time()
         if dt_time(6, 0) <= now <= dt_time(18, 0):
             print("It is between 6 AM and 6 PM.")
-            Serial1.println("LGT1,0")
-            time.sleep(0.2)
-            Serial1.println("LGT2,0")
-            time.sleep(0.2)
-            Serial1.println("LGT3,0")
-            time.sleep(0.2)
+            Serial1.println("CMD,LGT1,0")
+            time.sleep(1)
+            Serial1.println("CMD,LGT2,0")
+            time.sleep(1)
+            Serial1.println("CMD,LGT3,0")
+            time.sleep(1)
         else:
             print("It is outside 6 AM to 6 PM.")
-            Serial1.println("LGT1,1")
-            time.sleep(0.2)
-            Serial1.println("LGT2,1")
-            time.sleep(0.2)
-            Serial1.println("LGT3,1")
-            time.sleep(0.2)
-
-        
-        Serial1.println("GETDATA")
+            Serial1.println("CMD,LGT1,1")
+            time.sleep(1)
+            Serial1.println("CMD,LGT2,1")
+            time.sleep(1)
+            Serial1.println("CMD,LGT3,1")
+            time.sleep(1)
         
