@@ -121,7 +121,6 @@ def ParsingProcess(c):
     return {},[]
     
 runningOnce = False
-phRunningOnce = False
 def EC_process():
     global Serial1, EC_Trigg, runningOnce
     sch1 = Scheduler(1000)
@@ -133,19 +132,15 @@ def EC_process():
         if sch1.Event():
             if ECcnt == 0:
                 Serial1.println("CMD,PPU3,1")
-                time.sleep(1)
                 Serial1.println("CMD,PPU4,0")
             elif ECcnt == vol_time_amount:
                 Serial1.println("CMD,PPU3,0")
-                time.sleep(1)
                 Serial1.println("CMD,PPU4,0")
             elif ECcnt == (300 + vol_time_amount):
                 Serial1.println("CMD,PPU3,0")
-                time.sleep(1)
                 Serial1.println("CMD,PPU4,1")
             elif ECcnt == (300 + vol_time_amount + vol_time_amount):
                 Serial1.println("CMD,PPU3,0")
-                time.sleep(1)
                 Serial1.println("CMD,PPU4,0")
             elif ECcnt == (900 + vol_time_amount + vol_time_amount):
                 isRunning = False
@@ -153,44 +148,6 @@ def EC_process():
                 
             ECcnt +=1
     runningOnce = False
-
-def phProcess(val,high,low):
-    global phRunningOnce
-    sch2 = Scheduler(1000)
-    phCnt = 0
-    while True:
-        if sch2.Event():
-            if phCnt == 0:
-                if val > high:
-                    Serial1.println("CMD,PPU2,1")
-                    time.sleep(1)
-                    Serial1.println("CMD,PPU1,0")
-                    time.sleep(1)
-
-                elif val < low:
-                    Serial1.println("CMD,PPU1,1")
-                    time.sleep(1)
-                    Serial1.println("CMD,PPU2,0")
-                    time.sleep(1)
-                else:
-                    Serial1.println("CMD,PPU2,0")
-                    time.sleep(1)
-                    Serial1.println("CMD,PPU1,0")
-                    time.sleep(1)
-                    return
-            if phCnt == 20:
-                Serial1.println("CMD,PPU2,0")
-                time.sleep(1)
-                Serial1.println("CMD,PPU1,0")
-                time.sleep(1)
-            if phCnt == 300:
-                phRunningOnce = True
-                return
-
-            phCnt +=1
-
-
-
 
 # image_path = "1747581330826.jpg"
 # print(upload_base64_image(image_path))
@@ -310,11 +267,13 @@ while True:
 
                 elif k == "pH Level":
                     print(val,high,low)
-                    if not(phRunningOnce):
-                        phRunningOnce = True
-                        Thread2 = Thread(target=phProcess, args=(val, high, low))
-                        Thread2.start()
-                    
+                    if val > high:
+                        command = ["PPU2,1", "PPU1,0"]
+
+                    elif val < low:
+                        command = ["PPU1,1", "PPU2,0"]
+                    else:
+                        command = ["PPU1,0", "PPU2,0"]
 
                 elif k == "EC" and not(EC_Trigg) and machine_mode == "preset":
                     if val < low:
